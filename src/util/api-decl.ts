@@ -104,7 +104,7 @@ export function getApiDeclInfo<T>(decl: Class<T>): IApiDeclFullOption {
       });
       opt.apis.push(...apis);
       const events = allApiDecorator.events.filter((it) => {
-        return opt.events.find((item) => item.name === it.name);
+        return !opt.events.find((item) => item.name === it.name);
       });
       opt.events.push(...events);
     }
