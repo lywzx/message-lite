@@ -12,6 +12,10 @@
     "coverage:watch": "nyc mocha --watch",
     "lint-staged": "lint-staged"
   },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/lywzx/message-lite.git"
