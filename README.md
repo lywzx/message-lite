@@ -1,2 +1,2 @@
-# message-lite
-message lite 
+# package-typescript-template
+quick create typescript package template
