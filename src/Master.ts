@@ -1,10 +1,10 @@
-import { ConnectService } from '../connect/decl/connect.service';
-import { EMessageType, IMessageCallData, IServerConfig } from '../interfaces';
-import { Class } from '../types';
-import { getApiDeclInfo } from '../util/api-decl';
-import { defer } from '../util/defer';
-import { BaseServe } from './base-serve';
-import { BaseService } from './base-service';
+import { ConnectService } from './connect/decl/connect.service';
+import { EMessageType, IMessageCallData, IServerConfig } from './interfaces';
+import { Class } from './types';
+import { getApiDeclInfo } from './util/api-decl';
+import { defer } from './util/defer';
+import { BaseServer } from './libs/base-server';
+import { BaseService } from './libs/base-service';
 
 export interface IOpeningOption {
   clientId: string;
@@ -16,7 +16,7 @@ export interface IAddService<T extends BaseService, U extends T> {
   decl: Class<T>;
 }
 
-export class Master extends BaseServe {
+export class Master extends BaseServer {
   protected _skip!: boolean;
 
   protected clientIndex = 1000;

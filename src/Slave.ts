@@ -1,11 +1,11 @@
-import { ConnectService } from '../connect/decl/connect.service';
-import { Class } from '../types';
-import { createSlaveService } from '../util/create-service';
-import { BaseServe } from './base-serve';
-import { BaseService } from './base-service';
+import { ConnectService } from './connect/decl/connect.service';
+import { Class } from './types';
+import { createSlaveService } from './util/create-service';
+import { BaseServer } from './libs/base-server';
+import { BaseService } from './libs/base-service';
 import { IOpeningOption } from './Master';
 
-export class Slave extends BaseServe {
+export class Slave extends BaseServer {
   protected serviceMap = new Map<Class<any>, BaseService>();
 
   /**

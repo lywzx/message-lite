@@ -1,5 +1,5 @@
 import { ApiDecl, ApiDeclApi } from '../../decorator';
-import { BaseService } from '../../libs/base-service';
+import { BaseService } from '../../libs';
 import { ApiUnSupport } from '../../util';
 import { IApiCallTimeout } from '../../util/api-decl';
 

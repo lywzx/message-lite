@@ -41,10 +41,17 @@ export function ApiDecl<T>(decl: Class<T>, name: string) {
     option.apis = oldValue.apis;
     option.events = oldValue.events;
   }
+
   API_DECL_MAP.set(decl, option);
 }
 
-export function ApiDeclApi<T>(decl: Class<T>, option: IApiDeclFullApi) {
+export function apiDeclMethodOrEvent<T>(decl: Class<T>, option: IApiDeclFullApi, type: 'method'): void;
+export function apiDeclMethodOrEvent<T>(decl: Class<T>, option: IApiDeclFullApiEvent, type: 'event'): void;
+export function apiDeclMethodOrEvent<T>(
+  decl: Class<T>,
+  option: IApiDeclFullApi | IApiDeclFullApiEvent,
+  type: 'method' | 'event'
+): void {
   const opt: IApiDeclFullOption = {
     name: '',
     apis: [],
@@ -54,31 +61,19 @@ export function ApiDeclApi<T>(decl: Class<T>, option: IApiDeclFullApi) {
     const oldValue = API_DECL_MAP.get(decl)!;
     Object.assign(opt, oldValue);
   }
-  const idx = opt.apis.findIndex((i) => i.method === option.method);
+  const isMethod = type === 'method';
+  const findMethod = isMethod
+    ? (item: IApiDeclFullApi) => item.method === (option as IApiDeclFullApi).method
+    : (item: IApiDeclFullApiEvent) => item.name === (option as IApiDeclFullApiEvent).name;
+  const currentEdit = isMethod ? opt.apis : opt.events;
+  const idx = (currentEdit as any).findIndex(findMethod);
   if (idx !== -1) {
-    opt.apis.splice(idx, 1);
+    currentEdit.splice(idx, 1);
   }
-  opt.apis.push(option);
+  currentEdit.push(option as any);
   API_DECL_MAP.set(decl, opt);
 }
 
-export function ApiDeclEvent<T>(decl: Class<T>, option: IApiDeclFullApiEvent) {
-  const opt: IApiDeclFullOption = {
-    name: '',
-    apis: [],
-    events: [],
-  };
-  if (API_DECL_MAP.has(decl)) {
-    const oldValue = API_DECL_MAP.get(decl)!;
-    Object.assign(opt, oldValue);
-  }
-  const idx = opt.events.findIndex((i) => i.name === option.name);
-  if (idx !== -1) {
-    opt.events.splice(idx, 1);
-  }
-  opt.events.push(option);
-  API_DECL_MAP.set(decl, opt);
-}
 /**
  * 获取某个类的声明
  * @param decl
@@ -108,7 +103,7 @@ export function getApiDeclInfo<T>(decl: Class<T>): IApiDeclFullOption {
       });
       opt.events.push(...events);
     }
-    currentDecl = currentDecl.prototype;
+    currentDecl = Object.getPrototypeOf(currentDecl);
   } while (currentDecl);
 
   if (!opt.name) {

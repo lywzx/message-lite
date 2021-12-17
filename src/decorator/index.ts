@@ -1,10 +1,10 @@
-import { BaseService } from '../libs/base-service';
+import { BaseService } from '../libs';
 import { Class } from '../types';
 import {
   ApiDecl as InnerApiDecl,
-  ApiDeclApi as InnerApiDeclApi,
-  ApiDeclEvent as InnerApiDeclEvent,
+  apiDeclMethodOrEvent as InnerApiDeclMethodOrEvent,
   IApiDeclFullApi,
+  apiDeclMethodOrEvent,
 } from '../util/api-decl';
 
 /**
@@ -34,10 +34,14 @@ export function ApiDeclApi(option: Omit<IApiDeclFullApi, 'method'> = {}) {
     propertyKey: string | symbol,
     descriptor: TypedPropertyDescriptor<T>
   ) {
-    InnerApiDeclApi(target.constructor, {
-      ...option,
-      method: propertyKey as string,
-    });
+    InnerApiDeclMethodOrEvent(
+      target.constructor,
+      {
+        ...option,
+        method: propertyKey as string,
+      },
+      'method'
+    );
     return descriptor;
   };
 }
@@ -47,9 +51,13 @@ export function ApiDeclApi(option: Omit<IApiDeclFullApi, 'method'> = {}) {
  */
 export function ApiDeclEvent() {
   return function declObservable<T extends BaseService>(target: Class<T>['prototype'], propertyKey: string | symbol) {
-    InnerApiDeclEvent(target, {
-      name: propertyKey as string,
-    });
+    apiDeclMethodOrEvent(
+      target.constructor,
+      {
+        name: propertyKey as string,
+      },
+      'event'
+    );
   };
 }
 

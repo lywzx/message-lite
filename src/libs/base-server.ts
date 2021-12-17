@@ -3,7 +3,7 @@ import { Class } from '../types';
 import { defer, IPromiseDefer } from '../util/defer';
 import { MessageContext } from './message-context';
 
-export abstract class BaseServe {
+export abstract class BaseServer {
   protected messageContext: MessageContext;
 
   /**

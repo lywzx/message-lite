@@ -3,7 +3,7 @@ import { Class } from '../types';
 import { getApiDeclInfo } from '../util/api-decl';
 import { defer, IPromiseDefer } from '../util/defer';
 import { isValidateMessage } from '../util/is-validate-message';
-import { BaseServe } from './base-serve';
+import { BaseServer } from './base-server';
 import { BaseService } from './base-service';
 import { Event } from './event';
 
@@ -18,7 +18,7 @@ export class MessageContext extends Event {
 
   protected channel = '';
 
-  constructor(protected readonly serv: BaseServe, protected readonly option: IServerConfig) {
+  constructor(protected readonly serv: BaseServer, protected readonly option: IServerConfig) {
     super();
     this.data = new Map();
     this.pendingMap = new Map();
