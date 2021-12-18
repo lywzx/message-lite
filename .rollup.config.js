@@ -9,6 +9,7 @@ module.exports = {
       module: 'ES2015',
     },
     include: ['src'],
+    exclude: ['test']
   },
   inputPrefix: 'src',
   handleCopyPackageJson(config){
