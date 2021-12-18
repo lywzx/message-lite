@@ -9,11 +9,13 @@ export class ConnectService extends BaseService {
   @ApiDeclApi({
     timeout: 30000,
   })
+  /* istanbul ignore next */
   connect(id: string, option?: IApiCallTimeout): Promise<string> {
     return ApiUnSupport();
   }
 
   @ApiDeclApi()
+  /* istanbul ignore next */
   disconnect(id: string, option?: IApiCallTimeout): Promise<void> {
     return ApiUnSupport();
   }

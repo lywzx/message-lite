@@ -50,6 +50,9 @@ export interface IApiDeclFullApiEvent extends IApiCallOrResponseTransform {
 
 const API_DECL_MAP = new Map<Class<BaseService>, IApiDeclFullOption>();
 export function ApiDecl<T>(decl: Class<T>, name: string) {
+  if (!BaseService.isPrototypeOf(decl)) {
+    throw new Error(`${decl.name} should extends ${BaseService.name}`);
+  }
   const option: IApiDeclFullOption = {
     name,
     apis: [],
@@ -96,9 +99,10 @@ export function apiDeclMethodOrEvent<T>(
 /**
  * 获取某个类的声明
  * @param decl
+ * @param inherit
  */
-export function getApiDeclInfo<T>(decl: Class<T>): IApiDeclFullOption {
-  if (!Object.prototype.isPrototypeOf(BaseService)) {
+export function getApiDeclInfo<T>(decl: Class<T>, inherit = true): IApiDeclFullOption {
+  if (!BaseService.isPrototypeOf(decl)) {
     throw new Error('service is not extends BaseService');
   }
   const opt: IApiDeclFullOption = {
@@ -123,7 +127,7 @@ export function getApiDeclInfo<T>(decl: Class<T>): IApiDeclFullOption {
       opt.events.push(...events);
     }
     currentDecl = Object.getPrototypeOf(currentDecl);
-  } while (currentDecl);
+  } while (currentDecl && inherit);
 
   if (!opt.name) {
     throw new Error('can not find decl!');

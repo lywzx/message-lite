@@ -1,8 +1,6 @@
 export class Event {
   protected eventer: Map<string, Array<(...args: any[]) => any>> = new Map();
 
-  protected onceEventer: Map<any, boolean> = new Map<any, boolean>();
-
   on(event: string, fn: (...args: any[]) => any) {
     const callbacks: Array<(...args: any[]) => any> = this.eventer.get(event) || [];
     if (!callbacks.includes(fn)) {
@@ -15,9 +13,10 @@ export class Event {
     const callbacks = this.eventer.get(event);
     if (callbacks && callbacks.length) {
       if (fn) {
-        const index = callbacks.indexOf(fn);
-        callbacks.splice(index, 1);
-        this.eventer.set(event, callbacks);
+        this.eventer.set(
+          event,
+          callbacks.filter((item) => item !== fn)
+        );
       } else {
         this.eventer.delete(event);
       }
@@ -25,8 +24,10 @@ export class Event {
   }
 
   once(event: string, fn: (...args: any[]) => any) {
-    this.onceEventer.set(fn, true);
     this.on(event, fn);
+    this.on(event, () => {
+      this.off(event, fn);
+    });
   }
 
   emit(event: string, ...args: any[]) {
@@ -35,15 +36,11 @@ export class Event {
       try {
         fn(...args);
       } finally {
-        if (this.onceEventer.has(fn)) {
-          this.onceEventer.delete(fn);
-        }
       }
     });
   }
 
-  protected dispose() {
+  public dispose() {
     this.eventer = new Map<string, Array<(...args: any[]) => any>>();
-    this.onceEventer = new Map();
   }
 }

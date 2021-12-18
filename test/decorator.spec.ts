@@ -1,7 +1,7 @@
-import { getApiDeclInfo, IApiCallTimeout, IApiDeclFullOption } from '../../src/util';
-import { ConnectService } from '../../src/connect/decl/connect.service';
+import { getApiDeclInfo, IApiCallTimeout, IApiDeclFullOption } from '../src/util';
+import { ConnectService } from '../src/connect/decl/connect.service';
 import { expect } from 'chai';
-import { ApiDecl, ApiDeclApi, ApiDeclEvent, ApiUnSupport, IEventer } from '../../src';
+import { ApiDecl, ApiDeclApi, ApiDeclEvent, ApiImpl, ApiUnSupport, BaseService, IEventer } from '../src';
 
 const connectServiceInfo: IApiDeclFullOption = {
   name: '$$message.inner.connect.service',
@@ -21,6 +21,16 @@ describe('#decorator test impl', () => {
   it('check connect service default data is ok ', function () {
     const result = getApiDeclInfo(ConnectService);
     expect(result).to.be.eql(connectServiceInfo);
+  });
+
+  it('ApiDecl decorator service should extends BaseService', function () {
+    expect(() => {
+      @ApiDecl({
+        name: '1',
+      })
+      // eslint-disable-next-line no-unused-vars
+      class Test {}
+    }).to.be.throw();
   });
 
   it('should api decl name override', function () {
@@ -119,5 +129,40 @@ describe('#decorator test impl', () => {
         },
       ],
     });
+  });
+
+  it('impl should throw exception when not inherit BaseService', function () {
+    expect(() => {
+      @ApiImpl()
+      // eslint-disable-next-line no-unused-vars
+      class A {}
+    }).to.be.throw('not extends ');
+  });
+
+  it('impl should throw exception when not decl', function () {
+    expect(() => {
+      @ApiImpl()
+      // eslint-disable-next-line no-unused-vars
+      class A extends BaseService {}
+    }).to.be.throw('can not find decl');
+  });
+
+  it('impl should throw exception when decl', function () {
+    expect(() => {
+      @ApiImpl()
+      @ApiDecl({
+        name: 'test',
+      })
+      // eslint-disable-next-line no-unused-vars
+      class A extends BaseService {}
+    }).to.be.throw('should extends impl service');
+  });
+
+  it('impl should work', function () {
+    expect(() => {
+      @ApiImpl()
+      // eslint-disable-next-line no-unused-vars
+      class Test extends ConnectService {}
+    }).to.not.throw();
   });
 });

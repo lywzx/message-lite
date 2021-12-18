@@ -6,20 +6,29 @@ export class ServiceEventer<T = any> implements IEventer {
 
   constructor(protected readonly eventName: string) {
     this.event = new Event();
+    if (!eventName) {
+      throw new Error('event name can not be empty!');
+    }
   }
   emit(data: T): void {
     this.event.emit(this.eventName, data);
   }
 
-  off(fn?: (data: T) => any): void {
-    this.event.off(this.eventName, fn);
-  }
-
-  on(fn: (data: T) => any): void {
+  on(fn: (data: T) => any) {
     this.event.on(this.eventName, fn);
+    return () => {
+      this.event.off(this.eventName, fn);
+    };
   }
 
-  once(fn: (data: T) => any): void {
+  once(fn: (data: T) => any) {
     this.event.once(this.eventName, fn);
+    return () => {
+      this.event.off(this.eventName, fn);
+    };
+  }
+
+  dispose() {
+    this.event.dispose();
   }
 }

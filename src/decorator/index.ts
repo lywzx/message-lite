@@ -6,6 +6,7 @@ import {
   IApiDeclFullApi,
   apiDeclMethodOrEvent,
   IApiDeclFullApiEvent,
+  getApiDeclInfo,
 } from '../util/api-decl';
 
 /**
@@ -75,9 +76,17 @@ export function ApiDeclEvent(option: Omit<IApiDeclFullApiEvent, 'name'> = {}) {
  */
 export function ApiImpl() {
   return function <T extends BaseService>(serv: Class<T>) {
-    if (!BaseService.isPrototypeOf(serv)) {
-      throw new Error(`${serv.name} is not extends ${BaseService.name}`);
+    const message = `class ${serv.name} should extends impl service`;
+    try {
+      getApiDeclInfo(serv, false);
+      throw new Error(message);
+    } catch (e) {
+      if (e.message === message) {
+        throw e;
+      }
     }
+    getApiDeclInfo(serv);
+
     return serv;
   };
 }
