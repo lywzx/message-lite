@@ -1,10 +1,8 @@
 import { ConnectService } from './connect/decl/connect.service';
 import { EMessageType, IMessageCallData, IServerConfig } from './interfaces';
 import { Class } from './types';
-import { getApiDeclInfo } from './util/api-decl';
-import { defer } from './util/defer';
-import { BaseServer } from './libs/base-server';
-import { BaseService } from './libs/base-service';
+import { getApiDeclInfo, defer } from './util';
+import { BaseServer, BaseService } from './libs';
 
 export interface IOpeningOption {
   clientId: string;

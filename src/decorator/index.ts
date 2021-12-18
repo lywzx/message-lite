@@ -5,6 +5,7 @@ import {
   apiDeclMethodOrEvent as InnerApiDeclMethodOrEvent,
   IApiDeclFullApi,
   apiDeclMethodOrEvent,
+  IApiDeclFullApiEvent,
 } from '../util/api-decl';
 
 /**
@@ -49,11 +50,12 @@ export function ApiDeclApi(option: Omit<IApiDeclFullApi, 'method'> = {}) {
 /**
  * decl api subject
  */
-export function ApiDeclEvent() {
+export function ApiDeclEvent(option: Omit<IApiDeclFullApiEvent, 'name'> = {}) {
   return function declObservable<T extends BaseService>(target: Class<T>['prototype'], propertyKey: string | symbol) {
     apiDeclMethodOrEvent(
       target.constructor,
       {
+        ...option,
         name: propertyKey as string,
       },
       'event'

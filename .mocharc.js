@@ -7,6 +7,6 @@ module.exports = {
     "source-map-support/register",
     "tsconfig-paths/register"
   ],
-  "spec": "test/*.spec.ts",
+  "spec": "test/**/*.spec.ts",
   "exit": true
 }

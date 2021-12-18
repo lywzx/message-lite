@@ -1,9 +1,7 @@
-import { EMessageType } from '../interfaces';
-import { BaseService } from '../libs/base-service';
-import { MessageContext } from '../libs/message-context';
-import { ServiceEventer } from '../libs/service-eventer';
+import { BaseService, MessageContext, ServiceEventer } from '../libs';
 import { Class } from '../types';
 import { getApiDeclInfo, IApiDeclFullApi } from './api-decl';
+import { EMessageType } from '../interfaces';
 
 /**
  * 获取调用服务

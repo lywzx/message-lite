@@ -1,4 +1,4 @@
-import { BaseService } from '../libs/base-service';
+import { BaseService } from '../libs';
 import { Class } from '../types';
 
 export interface IApiDeclFullOption {
@@ -14,7 +14,23 @@ export interface IApiCallTimeout {
   timeout?: number;
 }
 
-export interface IApiDeclFullApi extends IApiCallTimeout {
+export interface IApiTransform {
+  send: (args: any) => any;
+  receive: (rawArgs: any) => any;
+}
+
+export interface IApiCallOrResponseTransform {
+  /**
+   * salve call
+   */
+  onCallTransform?: IApiTransform;
+  /**
+   * ser ret res
+   */
+  onReturnTransform?: IApiTransform;
+}
+
+export interface IApiDeclFullApi extends IApiCallTimeout, IApiCallOrResponseTransform {
   /**
    * 方法名称
    */
@@ -25,7 +41,10 @@ export interface IApiDeclFullApi extends IApiCallTimeout {
   notify?: boolean;
 }
 
-export interface IApiDeclFullApiEvent {
+/**
+ * event
+ */
+export interface IApiDeclFullApiEvent extends IApiCallOrResponseTransform {
   name: string;
 }
 

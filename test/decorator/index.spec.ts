@@ -1,10 +1,9 @@
-import { getApiDeclInfo, IApiCallTimeout } from '../../src/util/api-decl';
+import { getApiDeclInfo, IApiCallTimeout, IApiDeclFullOption } from '../../src/util';
 import { ConnectService } from '../../src/connect/decl/connect.service';
 import { expect } from 'chai';
-import { ApiDecl, ApiDeclApi } from '../../src/decorator';
-import { ApiUnSupport } from '../../src';
+import { ApiDecl, ApiDeclApi, ApiDeclEvent, ApiUnSupport, IEventer } from '../../src';
 
-const connectServiceInfo = {
+const connectServiceInfo: IApiDeclFullOption = {
   name: '$$message.inner.connect.service',
   apis: [
     {
@@ -71,6 +70,53 @@ describe('#decorator test impl', () => {
           method: 'test',
         },
         ...connectServiceInfo.apis,
+      ],
+    });
+  });
+
+  class C extends ConnectService {
+    @ApiDeclEvent()
+    public eventer: IEventer<any>;
+  }
+
+  it('should api decl event should override', function () {
+    const onReturnTransform = {
+      send: (a: any) => a,
+      receive: (a: any) => a,
+    };
+    class D extends C {
+      @ApiDeclEvent({
+        onReturnTransform,
+      })
+      public eventer: IEventer<any>;
+    }
+    const result = getApiDeclInfo(D);
+    const events = connectServiceInfo.events.slice();
+    events.splice(0, 1, {
+      name: 'eventer',
+      onReturnTransform,
+    });
+    expect(result).to.be.eql({
+      ...connectServiceInfo,
+      events,
+    });
+  });
+
+  it('should api decl new event should merge', function () {
+    class E extends C {
+      @ApiDeclEvent()
+      public eventer1: IEventer<any>;
+    }
+    const result = getApiDeclInfo(E);
+    expect(result).to.be.eql({
+      ...connectServiceInfo,
+      events: [
+        {
+          name: 'eventer1',
+        },
+        {
+          name: 'eventer',
+        },
       ],
     });
   });

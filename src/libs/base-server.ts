@@ -1,6 +1,6 @@
 import { IServerConfig } from '../interfaces';
 import { Class } from '../types';
-import { defer, IPromiseDefer } from '../util/defer';
+import { defer, IPromiseDefer } from '../util';
 import { MessageContext } from './message-context';
 
 export abstract class BaseServer {

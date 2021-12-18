@@ -1,8 +1,7 @@
 import { ConnectService } from './connect/decl/connect.service';
 import { Class } from './types';
-import { createSlaveService } from './util/create-service';
-import { BaseServer } from './libs/base-server';
-import { BaseService } from './libs/base-service';
+import { createSlaveService } from './util';
+import { BaseServer, BaseService } from './libs';
 import { IOpeningOption } from './Master';
 
 export class Slave extends BaseServer {

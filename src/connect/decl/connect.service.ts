@@ -1,7 +1,6 @@
 import { ApiDecl, ApiDeclApi } from '../../decorator';
 import { BaseService } from '../../libs';
-import { ApiUnSupport } from '../../util';
-import { IApiCallTimeout } from '../../util/api-decl';
+import { ApiUnSupport, IApiCallTimeout } from '../../util';
 
 @ApiDecl({
   name: '$$message.inner.connect.service',

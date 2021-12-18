@@ -1,8 +1,6 @@
 import { EMessageType, IMessageCallData, IMessageEvent, IMessageResponseData, IServerConfig } from '../interfaces';
 import { Class } from '../types';
-import { getApiDeclInfo } from '../util/api-decl';
-import { defer, IPromiseDefer } from '../util/defer';
-import { isValidateMessage } from '../util/is-validate-message';
+import { getApiDeclInfo, defer, IPromiseDefer, isValidateMessage } from '../util';
 import { BaseServer } from './base-server';
 import { BaseService } from './base-service';
 import { Event } from './event';
