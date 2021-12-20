@@ -30,9 +30,16 @@ export enum EMessageType {
  */
 export interface IMessageBaseData {
   /**
+   * 消息ID
+   */
+  id: number;
+  /**
    * 每条消息必附带内容
    */
   channel: string;
+  /**
+   * 消息类型
+   */
   type: EMessageType;
   /**
    * 消息数据
@@ -45,10 +52,6 @@ export interface IMessageBaseData {
  */
 export interface IMessageResponseData extends IMessageBaseData {
   /**
-   * 消息ID
-   */
-  id: number;
-  /**
    * 响应消息
    */
   type: EMessageType.RESPONSE | EMessageType.RESPONSE_EXCEPTION;
@@ -59,7 +62,6 @@ export interface IMessageResponseData extends IMessageBaseData {
  * 方法调用或消息消息
  */
 export interface IMessageCallData extends IMessageBaseData {
-  id: number;
   /**
    * 调用的服务名称
    */

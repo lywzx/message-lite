@@ -2,7 +2,7 @@ import { ConnectService } from './connect/decl/connect.service';
 import { EMessageType, IMessageCallData, IServerConfig } from './interfaces';
 import { Class } from './types';
 import { getApiDeclInfo, defer } from './util';
-import { BaseConnectSession, BaseServer, BaseService } from './libs';
+import { BaseConnectSession, BaseServer, BaseService, WILL_CONNECT } from './libs';
 
 export interface IOpeningOption {
   clientId: string;
@@ -27,7 +27,14 @@ export class Master extends BaseServer {
     throw new Error('api not available!');
   }
 
-  async start(): Promise<void> {}
+  protected whenNewClientConnected = (message: any) => {
+
+  };
+
+  async start(): Promise<void> {
+    this.messageContext.start();
+    this.messageContext.on(WILL_CONNECT, this.whenNewClientConnected);
+  }
 
   async stop(): Promise<void> {}
   /**
@@ -35,7 +42,6 @@ export class Master extends BaseServer {
    */
   async opening(option: IOpeningOption): Promise<void> {
     this.messageContext.start();
-    this.messageContext.setChannel(option.clientId);
     const res = (await this.messageContext.whenServiceCalled(ConnectService, {
       method: 'connect',
       timeout: option.timeout,

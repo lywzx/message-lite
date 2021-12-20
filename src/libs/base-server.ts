@@ -32,7 +32,7 @@ export abstract class BaseServer {
   protected _closedDefer: IPromiseDefer<void>;
 
   constructor(option: IServerConfig) {
-    this.messageContext = new MessageContext(this, option);
+    this.messageContext = new MessageContext(option);
     this._openedDefer = defer<void>();
     this._closedDefer = defer<void>();
   }

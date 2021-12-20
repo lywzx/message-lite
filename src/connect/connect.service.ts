@@ -1,9 +1,11 @@
-import { ApiDecl, ApiDeclApi } from '../../decorator';
-import { BaseService } from '../../libs';
-import { ApiUnSupport, IApiCallTimeout } from '../../util';
+import { ApiDecl, ApiDeclApi } from '../decorator';
+import { BaseService } from '../libs';
+import { ApiUnSupport, IApiCallTimeout } from '../util';
+
+export const CONST_SERVICE_NAME = '$$__message.inner.connect.service__$$';
 
 @ApiDecl({
-  name: '$$message.inner.connect.service',
+  name: CONST_SERVICE_NAME,
 })
 export class ConnectService extends BaseService {
   @ApiDeclApi({

@@ -1,9 +1,25 @@
-import { EMessageType, IMessageCallData, IMessageEvent, IMessageResponseData, IServerConfig } from '../interfaces';
+import {
+  EMessageType,
+  IMasterServerConfig,
+  IMessageCallData,
+  IMessageEvent,
+  IMessageResponseData, IServerConfigBase
+} from '../interfaces';
 import { Class } from '../types';
-import { getApiDeclInfo, defer, IPromiseDefer, isValidateMessage } from '../util';
+import { getApiDeclInfo, defer, IPromiseDefer, messageHelper, createMessageEventName } from '../util';
 import { BaseService } from './base-service';
 import { Event } from './event';
 import { BaseConnectSession } from './base-connect-session';
+import { CONST_SERVICE_NAME } from '../connect/connect.service';
+
+export interface ISendMessage {
+  data: any;
+}
+
+/**
+ * some client try connect
+ */
+export const WILL_CONNECT = 'client:will:connect';
 
 export class MessageContext extends Event {
   protected pendingMap: Map<string, IPromiseDefer<any>>;
@@ -12,9 +28,12 @@ export class MessageContext extends Event {
 
   protected isReady = false;
 
-  constructor(protected readonly option: IServerConfig) {
+  protected t: (message: any) => any;
+
+  constructor(protected readonly option: IServerConfigBase) {
     super();
     this.pendingMap = new Map();
+    this.t = option.transformMessage || ((m: any) => m);
   }
 
   // 开始监听
@@ -70,35 +89,36 @@ export class MessageContext extends Event {
     return df.promise;
   }
 
-  private handMessage = (message: any) => {
-    if (isValidateMessage(message) && this.session.has(message.channel)) {
-      const session = this.session.get(message.channel);
-      switch (message.type) {
-        case EMessageType.EVENT_ON: {
-          const data = message as IMessageEvent;
-          this.emit(`${data.service}:${data.event}:on`, undefined, session);
-          break;
-        }
-        case EMessageType.EVENT_OFF: {
-          const data = message as IMessageEvent;
-          this.emit(`${data.service}:${data.event}:off`, undefined, session);
-          break;
-        }
-        case EMessageType.EVENT: {
-          const data = message as IMessageEvent;
-          this.emit(`${data.service}:${data.event}:emit`, data, session);
-          break;
-        }
+  private handMessage = (originMessage: any) => {
+    const message = this.t(originMessage);
+    if (messageHelper(message)) {
+      // 连接类消息
+      const { channel, id = '', data, type } = message;
+
+      if (type === EMessageType.CALL && (message as IMessageCallData).service === CONST_SERVICE_NAME) {
+        this.emit(WILL_CONNECT, originMessage);
+        return;
+      }
+
+      const session = this.session.get(channel);
+      if (!session && type === EMessageType.CALL && (message as IMessageCallData).service === CONST_SERVICE_NAME) {
+
+        return ;
+      }
+      switch (type) {
+        case EMessageType.EVENT_ON:
+        case EMessageType.EVENT_OFF:
+        case EMessageType.EVENT:
         case EMessageType.CALL: {
-          const data = message as IMessageCallData;
-          this.emit(`${data.service}:${data.method}:call`, data, session);
+          const eventName = createMessageEventName(message as IMessageEvent | IMessageCallData);
+          this.emit(eventName, message.method === 'connect' ?  data, session);
           break;
         }
         case EMessageType.RESPONSE_EXCEPTION:
         case EMessageType.RESPONSE: {
           const data = message as IMessageResponseData;
           const pendingMap = this.pendingMap;
-          const key = `${data.channel}-${data.id}`;
+          const key = `${channel}-${id}`;
           if (pendingMap.has(key)) {
             const df = pendingMap.get(key)!;
             data.type === EMessageType.RESPONSE_EXCEPTION ? df.reject(new Error(data.data)) : df.resolve(data.data);
