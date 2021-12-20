@@ -1,24 +1,19 @@
 import { EMessageType, IMessageCallData, IMessageEvent, IMessageResponseData, IServerConfig } from '../interfaces';
 import { Class } from '../types';
 import { getApiDeclInfo, defer, IPromiseDefer, isValidateMessage } from '../util';
-import { BaseServer } from './base-server';
 import { BaseService } from './base-service';
 import { Event } from './event';
+import { BaseConnectSession } from './base-connect-session';
 
 export class MessageContext extends Event {
-  protected data: Map<any, any>;
-
   protected pendingMap: Map<string, IPromiseDefer<any>>;
+
+  protected session: Map<string, BaseConnectSession>;
 
   protected isReady = false;
 
-  protected messageId = 0;
-
-  protected channel = '';
-
-  constructor(protected readonly serv: BaseServer, protected readonly option: IServerConfig) {
+  constructor(protected readonly option: IServerConfig) {
     super();
-    this.data = new Map();
     this.pendingMap = new Map();
   }
 
@@ -30,12 +25,19 @@ export class MessageContext extends Event {
     this.option.listenMessage(this.handMessage);
   }
 
-  public setChannel(channel: string) {
-    this.channel = channel;
-  }
-
   public readied() {
     this.isReady = true;
+  }
+
+  public attachSession(session: BaseConnectSession) {
+    this.session.set(session.getReceiverPort(), session);
+  }
+
+  public detachSession(session: BaseConnectSession | string) {
+    const key = typeof session === 'string' ? session : session.getReceiverPort();
+    if (this.session.has(key)) {
+      this.session.delete(key);
+    }
   }
 
   public dispose() {
@@ -69,33 +71,34 @@ export class MessageContext extends Event {
   }
 
   private handMessage = (message: any) => {
-    if (isValidateMessage(message) && this.channel === message.channel) {
+    if (isValidateMessage(message) && this.session.has(message.channel)) {
+      const session = this.session.get(message.channel);
       switch (message.type) {
         case EMessageType.EVENT_ON: {
           const data = message as IMessageEvent;
-          this.emit(`${data.service}:${data.event}:on`);
+          this.emit(`${data.service}:${data.event}:on`, undefined, session);
           break;
         }
         case EMessageType.EVENT_OFF: {
           const data = message as IMessageEvent;
-          this.emit(`${data.service}:${data.event}:off`);
+          this.emit(`${data.service}:${data.event}:off`, undefined, session);
           break;
         }
         case EMessageType.EVENT: {
           const data = message as IMessageEvent;
-          this.emit(`${data.service}:${data.event}:emit`, data);
+          this.emit(`${data.service}:${data.event}:emit`, data, session);
           break;
         }
         case EMessageType.CALL: {
           const data = message as IMessageCallData;
-          this.emit(`${data.service}:${data.method}:call`, data);
+          this.emit(`${data.service}:${data.method}:call`, data, session);
           break;
         }
         case EMessageType.RESPONSE_EXCEPTION:
         case EMessageType.RESPONSE: {
           const data = message as IMessageResponseData;
           const pendingMap = this.pendingMap;
-          const key = `${this.channel}-${data.id}`;
+          const key = `${data.channel}-${data.id}`;
           if (pendingMap.has(key)) {
             const df = pendingMap.get(key)!;
             data.type === EMessageType.RESPONSE_EXCEPTION ? df.reject(new Error(data.data)) : df.resolve(data.data);
@@ -113,8 +116,7 @@ export class MessageContext extends Event {
   ) {
     this.option.sendMessage({
       ...message,
-      id: message.id ? message.id : ++this.messageId,
-      channel: this.channel,
+      id: message.id,
     });
   }
 

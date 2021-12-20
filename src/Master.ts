@@ -2,7 +2,7 @@ import { ConnectService } from './connect/decl/connect.service';
 import { EMessageType, IMessageCallData, IServerConfig } from './interfaces';
 import { Class } from './types';
 import { getApiDeclInfo, defer } from './util';
-import { BaseServer, BaseService } from './libs';
+import { BaseConnectSession, BaseServer, BaseService } from './libs';
 
 export interface IOpeningOption {
   clientId: string;
@@ -15,7 +15,7 @@ export interface IAddService<T extends BaseService, U extends T> {
 }
 
 export class Master extends BaseServer {
-  protected _skip!: boolean;
+  protected sessionMap = new Map<string, BaseConnectSession>();
 
   protected clientIndex = 1000;
 
@@ -27,13 +27,9 @@ export class Master extends BaseServer {
     throw new Error('api not available!');
   }
 
-  getRemoteService<T>(serv: Class<T>): T | undefined {
-    throw new Error('api not available!');
-  }
+  async start(): Promise<void> {}
 
-  isMaster(): boolean {
-    return true;
-  }
+  async stop(): Promise<void> {}
   /**
    * 打开端口等待连接
    */

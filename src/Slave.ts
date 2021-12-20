@@ -1,10 +1,10 @@
 import { ConnectService } from './connect/decl/connect.service';
 import { Class } from './types';
 import { createSlaveService } from './util';
-import { BaseServer, BaseService } from './libs';
+import { BaseConnectSession, BaseService } from './libs';
 import { IOpeningOption } from './Master';
 
-export class Slave extends BaseServer {
+export class Slave extends BaseConnectSession {
   protected serviceMap = new Map<Class<any>, BaseService>();
 
   /**
