@@ -19,6 +19,7 @@ export interface IMasterServerConfig<T extends (message: any) => void = (message
 /**
  * slave server config
  */
-export interface ISlaveClientConfig<T extends (message: any) => void> extends IServerConfigBase<T> {
+export interface ISlaveClientConfig<T extends (message: any) => void = (message: any) => void>
+  extends IServerConfigBase<T> {
   sendMessage(message: any): void;
 }

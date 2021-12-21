@@ -1,16 +1,43 @@
-import { ConnectService } from './connect/decl/connect.service';
+import { ConnectService } from './connect/connect.service';
 import { Class } from './types';
-import { createSlaveService } from './util';
-import { BaseConnectSession, BaseService } from './libs';
-import { IOpeningOption } from './Master';
+import { createSlaveService, defer } from './util';
+import { BaseConnectSession, BaseService, MessageContext } from './libs';
+import { ISlaveClientConfig } from './interfaces';
 
-export class Slave extends BaseConnectSession {
+export interface IConnectOption {
+  name?: string;
+  timeout?: number;
+}
+
+export class Slave {
+  protected isConnecting = false;
+  protected session!: BaseConnectSession;
+
+  protected messageContext: MessageContext;
+
+  constructor(protected readonly option: ISlaveClientConfig) {
+    this.messageContext = new MessageContext(option);
+  }
+
   protected serviceMap = new Map<Class<any>, BaseService>();
 
   /**
    * 主动连接Master
    */
-  async connect(option: IOpeningOption): Promise<void> {
+  async connect(option: IConnectOption): Promise<void> {
+    if (this.isConnecting) {
+      throw new Error('client is connecting server, please not call twice!');
+    }
+    this.session = new BaseConnectSession(this.option.sendMessage, this.messageContext);
+    this.session.name = option.name || '';
+    const connectService = this.getService(ConnectService)!;
+    // 发送预连接请求
+    await connectService.preConnect('');
+    // 等待端口打开
+    const df = defer<void>(option.timeout || 3000);
+    // 等待
+    await this._openedDefer.resolve(df.promise);
+
     try {
       const service = createSlaveService(this.messageContext, ConnectService);
       this.messageContext.start();
@@ -32,20 +59,16 @@ export class Slave extends BaseConnectSession {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   async disconnect(): Promise<void> {}
 
-  getRemoteService<T>(serv: Class<T>): T | undefined {
-    return undefined;
-  }
-
-  getService<T>(serv: Class<T>): T | undefined {
+  /**
+   * call service
+   * @param serv
+   */
+  getService<T extends BaseService>(serv: Class<T>): T | undefined {
     if (this.serviceMap.has(serv)) {
       return this.serviceMap.get(serv)! as T;
     }
-    const service = createSlaveService(this.messageContext, serv);
+    const service = this.session.getService(serv);
     this.serviceMap.set(serv, service);
     return service;
-  }
-
-  isMaster(): boolean {
-    return false;
   }
 }

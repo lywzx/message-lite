@@ -1,8 +1,11 @@
-import { defer, IPromiseDefer } from '../util';
+import { createSlaveService, defer, IPromiseDefer } from '../util';
 import { Class } from '../types';
 import { BaseService } from './base-service';
+import { IMessageBaseData } from '../interfaces';
+import { MessageContext } from './message-context';
+import { message } from 'antd';
 
-export abstract class BaseConnectSession {
+export class BaseConnectSession {
   /**
    * wait session opened
    */
@@ -43,7 +46,7 @@ export abstract class BaseConnectSession {
    * session name
    * @protected
    */
-  protected name: string;
+  public name: string;
 
   /**
    * message id
@@ -51,9 +54,16 @@ export abstract class BaseConnectSession {
    */
   protected messageId = 0;
 
-  constructor() {
+  constructor(protected readonly sender: (message: any) => void, protected readonly messageContext: MessageContext) {
     this._openedDefer = defer<void>();
     this._closedDefer = defer<void>();
+  }
+
+  /**
+   * generate message id
+   */
+  public getMessageId() {
+    return ++this.messageId;
   }
 
   public getSenderPort() {
@@ -63,8 +73,25 @@ export abstract class BaseConnectSession {
   public getReceiverPort() {
     return [this.port2, this.name, this.port1].join('➜');
   }
+
+  /**
+   * send message
+   * @param message
+   */
+  public sendMessage(message: Pick<IMessageBaseData, 'type' | 'data'>) {
+    const mContent: IMessageBaseData = {
+      ...message,
+      id: this.getMessageId(),
+      channel: this.getSenderPort(),
+    };
+    this.sender(mContent);
+    return message;
+  }
+
   /**
    * 获取某个服务
    */
-  abstract getService<T extends BaseService>(serv: Class<T>): T | undefined;
+  getService<T extends BaseService>(serv: Class<T>) {
+    return createSlaveService(this.messageContext, this, serv);
+  }
 }

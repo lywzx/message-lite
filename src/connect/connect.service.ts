@@ -1,6 +1,6 @@
 import { ApiDecl, ApiDeclApi } from '../decorator';
 import { BaseService } from '../libs';
-import { ApiUnSupport, IApiCallTimeout } from '../util';
+import { ApiUnSupport } from '../util';
 
 export const CONST_SERVICE_NAME = '$$__message.inner.connect.service__$$';
 
@@ -9,16 +9,32 @@ export const CONST_SERVICE_NAME = '$$__message.inner.connect.service__$$';
 })
 export class ConnectService extends BaseService {
   @ApiDeclApi({
-    timeout: 30000,
+    notify: true,
   })
   /* istanbul ignore next */
-  connect(id: string, option?: IApiCallTimeout): Promise<string> {
+  preConnect(name: string): Promise<void> {
     return ApiUnSupport();
   }
 
-  @ApiDeclApi()
+  @ApiDeclApi({
+    notify: true,
+  })
   /* istanbul ignore next */
-  disconnect(id: string, option?: IApiCallTimeout): Promise<void> {
+  connect(id: string): Promise<string> {
+    return ApiUnSupport();
+  }
+
+  @ApiDeclApi({})
+  /* istanbul ignore next */
+  preDisConnect(): Promise<void> {
+    return ApiUnSupport();
+  }
+
+  @ApiDeclApi({
+    notify: true,
+  })
+  /* istanbul ignore next */
+  disconnect(id: string): Promise<void> {
     return ApiUnSupport();
   }
 }

@@ -1,10 +1,4 @@
-import {
-  EMessageType,
-  IMasterServerConfig,
-  IMessageCallData,
-  IMessageEvent,
-  IMessageResponseData, IServerConfigBase
-} from '../interfaces';
+import { EMessageType, IMessageCallData, IMessageEvent, IMessageResponseData, IServerConfigBase } from '../interfaces';
 import { Class } from '../types';
 import { getApiDeclInfo, defer, IPromiseDefer, messageHelper, createMessageEventName } from '../util';
 import { BaseService } from './base-service';
@@ -12,14 +6,15 @@ import { Event } from './event';
 import { BaseConnectSession } from './base-connect-session';
 import { CONST_SERVICE_NAME } from '../connect/connect.service';
 
-export interface ISendMessage {
-  data: any;
-}
-
 /**
  * some client try connect
  */
 export const WILL_CONNECT = 'client:will:connect';
+
+/**
+ * some client will discount
+ */
+export const WILL_DISCOUNT = 'client:will:disconnect';
 
 export class MessageContext extends Event {
   protected pendingMap: Map<string, IPromiseDefer<any>>;
@@ -89,21 +84,26 @@ export class MessageContext extends Event {
     return df.promise;
   }
 
+  /**
+   * receive message hand method
+   * @param originMessage
+   */
   private handMessage = (originMessage: any) => {
     const message = this.t(originMessage);
     if (messageHelper(message)) {
       // 连接类消息
       const { channel, id = '', data, type } = message;
 
-      if (type === EMessageType.CALL && (message as IMessageCallData).service === CONST_SERVICE_NAME) {
-        this.emit(WILL_CONNECT, originMessage);
-        return;
-      }
-
       const session = this.session.get(channel);
-      if (!session && type === EMessageType.CALL && (message as IMessageCallData).service === CONST_SERVICE_NAME) {
-
-        return ;
+      if (!session) {
+        if (type === EMessageType.CALL && (message as IMessageCallData).service === CONST_SERVICE_NAME) {
+          if ((message as IMessageCallData).method === 'connect') {
+            this.emit(WILL_CONNECT, message, originMessage);
+          } else {
+            this.emit(WILL_DISCOUNT, message, originMessage);
+          }
+        }
+        return;
       }
       switch (type) {
         case EMessageType.EVENT_ON:
@@ -111,7 +111,7 @@ export class MessageContext extends Event {
         case EMessageType.EVENT:
         case EMessageType.CALL: {
           const eventName = createMessageEventName(message as IMessageEvent | IMessageCallData);
-          this.emit(eventName, message.method === 'connect' ?  data, session);
+          this.emit(eventName, data, session);
           break;
         }
         case EMessageType.RESPONSE_EXCEPTION:
@@ -129,42 +129,25 @@ export class MessageContext extends Event {
     }
   };
 
-  async sendMessageWithOutResponse(
-    message:
-      | (Omit<IMessageCallData, 'channel' | 'id'> & { id?: number })
-      | (Omit<IMessageResponseData, 'channel' | 'id'> & { id?: number })
-  ) {
-    this.option.sendMessage({
-      ...message,
-      id: message.id,
-    });
-  }
-
-  async sendMessageWithResponse(
-    message: Omit<IMessageCallData, 'channel' | 'id'> | Omit<IMessageResponseData, 'channel' | 'id'>,
-    option: {
-      timeout?: number;
-    }
-  ) {
-    const m = {
-      id: ++this.messageId,
-      channel: this.channel,
-      ...message,
-    };
-    const df = defer(option.timeout);
-
-    this.option.sendMessage(m);
-
-    const pendingId = `${this.channel}-${this.messageId}`;
-    if (this.pendingMap.has(pendingId)) {
-      throw new Error('message has exists!');
-    } else {
-      this.pendingMap.set(`${this.channel}-${this.messageId}`, df);
-      df.promise.finally(() => {
-        this.pendingMap.delete(pendingId);
-      });
-    }
+  public async waitMessageResponse(message: IMessageCallData, option: { timeout: number }) {
+    const df = defer<any>(option.timeout);
 
     return df.promise;
   }
+}
+
+export interface IMessageContextSendMessage<T = any> {
+  /**
+   * message uniq id
+   */
+  sessionId: string;
+  /**
+   * message data content
+   */
+  data: T;
+}
+
+export interface IMessageOption {
+  notify: boolean;
+  timeout: number;
 }

@@ -2,7 +2,7 @@ import { ConnectService } from './connect/connect.service';
 import { EMessageType, IMessageCallData, IMasterServerConfig } from './interfaces';
 import { Class } from './types';
 import { getApiDeclInfo, defer } from './util';
-import { BaseConnectSession, BaseServer, BaseService, WILL_CONNECT } from './libs';
+import { BaseConnectSession, BaseServer, BaseService, WILL_CONNECT, WILL_DISCOUNT } from './libs';
 
 export interface IOpeningOption {
   clientId: string;
@@ -14,7 +14,7 @@ export interface IAddService<T extends BaseService, U extends T> {
   decl: Class<T>;
 }
 
-export class Master extends BaseServer {
+export class Master {
   protected sessionMap = new Map<string, BaseConnectSession>();
 
   protected clientIndex = 1000;
@@ -27,11 +27,16 @@ export class Master extends BaseServer {
     throw new Error('api not available!');
   }
 
-  protected whenNewClientConnected = (message: any) => {};
+  protected whenNewClientConnected = (message: any) => {
+
+  };
+
+  protected whenClientWillDisConnected = (message: any) => {};
 
   async start(): Promise<void> {
     this.messageContext.start();
     this.messageContext.on(WILL_CONNECT, this.whenNewClientConnected);
+    this.messageContext.on(WILL_DISCOUNT, this.whenClientWillDisConnected);
   }
 
   async stop(): Promise<void> {
@@ -40,7 +45,7 @@ export class Master extends BaseServer {
   /**
    * 打开端口等待连接
    */
-  async opening(option: IOpeningOption): Promise<void> {
+/*  async opening(option: IOpeningOption): Promise<void> {
     this.messageContext.start();
     const res = (await this.messageContext.whenServiceCalled(ConnectService, {
       method: 'connect',
@@ -55,7 +60,7 @@ export class Master extends BaseServer {
     });
     this.messageContext.setChannel(channelId);
     this.messageContext.readied();
-  }
+  }*/
   /**
    * 关闭连接
    */

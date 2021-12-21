@@ -47,8 +47,4 @@ export abstract class BaseServer {
    */
   abstract getRemoteService<T>(serv: Class<T>): T | undefined;
 
-  /**
-   * 判断当前是否master内容
-   */
-  abstract isMaster(): boolean;
 }

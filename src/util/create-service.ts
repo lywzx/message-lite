@@ -1,14 +1,19 @@
-import { BaseService, MessageContext, ServiceEventer } from '../libs';
+import { BaseConnectSession, BaseService, MessageContext, ServiceEventer } from '../libs';
 import { Class } from '../types';
 import { getApiDeclInfo, IApiDeclFullApi } from './api-decl';
-import { EMessageType } from '../interfaces';
+import { EMessageType, IMessageCallData } from '../interfaces';
 
 /**
  * 获取调用服务
- * @param message
+ * @param messageContext
+ * @param session
  * @param serv
  */
-export function createSlaveService<T extends BaseService>(message: MessageContext, serv: Class<T>) {
+export function createSlaveService<T extends BaseService>(
+  messageContext: MessageContext,
+  session: BaseConnectSession,
+  serv: Class<T>
+) {
   const s = new serv();
   const impl = getApiDeclInfo(serv);
   // 处理所有的API
@@ -24,21 +29,13 @@ export function createSlaveService<T extends BaseService>(message: MessageContex
         method: api.method,
         data,
       };
+      const message = session.sendMessage(callData) as IMessageCallData;
       if (option.notify) {
-        return message.sendMessageWithOutResponse({
-          ...callData,
-          type: EMessageType.CALL,
-        });
+        return Promise.resolve();
       } else {
-        return message.sendMessageWithResponse(
-          {
-            ...callData,
-            type: EMessageType.CALL,
-          },
-          {
-            timeout: option.timeout,
-          }
-        );
+        return messageContext.waitMessageResponse(message, {
+          timeout: option.timeout || 30000,
+        });
       }
     };
   });
