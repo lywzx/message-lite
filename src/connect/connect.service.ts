@@ -1,6 +1,6 @@
 import { ApiDecl, ApiDeclApi } from '../decorator';
 import { BaseService } from '../libs';
-import { ApiUnSupport } from '../util';
+import { ApiUnSupport, IPromiseDefer } from '../util';
 
 export const CONST_SERVICE_NAME = '$$__message.inner.connect.service__$$';
 

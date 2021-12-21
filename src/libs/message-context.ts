@@ -1,6 +1,6 @@
 import { EMessageType, IMessageCallData, IMessageEvent, IMessageResponseData, IServerConfigBase } from '../interfaces';
 import { Class } from '../types';
-import { getApiDeclInfo, defer, IPromiseDefer, messageHelper, createMessageEventName } from '../util';
+import { getApiDeclInfo, defer, IPromiseDefer, messageHelper, createMessageEventName, isHandshakeMessage } from '../util';
 import { BaseService } from './base-service';
 import { Event } from './event';
 import { BaseConnectSession } from './base-connect-session';
@@ -98,7 +98,7 @@ export class MessageContext extends Event {
       if (!session) {
         if (type === EMessageType.CALL && (message as IMessageCallData).service === CONST_SERVICE_NAME) {
           if ((message as IMessageCallData).method === 'connect') {
-            this.emit(WILL_CONNECT, message, originMessage);
+            isHandshakeMessage(data) && this.emit(WILL_CONNECT, message, originMessage);
           } else {
             this.emit(WILL_DISCOUNT, message, originMessage);
           }

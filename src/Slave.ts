@@ -1,6 +1,6 @@
 import { ConnectService } from './connect/connect.service';
 import { Class } from './types';
-import { createSlaveService, defer } from './util';
+import { createSlaveService, defer, sendInitMessage } from './util';
 import { BaseConnectSession, BaseService, MessageContext } from './libs';
 import { ISlaveClientConfig } from './interfaces';
 
@@ -32,7 +32,7 @@ export class Slave {
     this.session.name = option.name || '';
     const connectService = this.getService(ConnectService)!;
     // 发送预连接请求
-    await connectService.preConnect('');
+    await connectService.preConnect(sendInitMessage());
     // 等待端口打开
     const df = defer<void>(option.timeout || 3000);
     // 等待
