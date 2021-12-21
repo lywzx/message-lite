@@ -1,5 +1,5 @@
-import { ConnectService } from './connect/decl/connect.service';
-import { EMessageType, IMessageCallData, IServerConfig } from './interfaces';
+import { ConnectService } from './connect/connect.service';
+import { EMessageType, IMessageCallData, IMasterServerConfig } from './interfaces';
 import { Class } from './types';
 import { getApiDeclInfo, defer } from './util';
 import { BaseConnectSession, BaseServer, BaseService, WILL_CONNECT } from './libs';
@@ -19,7 +19,7 @@ export class Master extends BaseServer {
 
   protected clientIndex = 1000;
 
-  constructor(option: IServerConfig) {
+  constructor(protected readonly option: IMasterServerConfig) {
     super(option);
   }
 
@@ -27,16 +27,16 @@ export class Master extends BaseServer {
     throw new Error('api not available!');
   }
 
-  protected whenNewClientConnected = (message: any) => {
-
-  };
+  protected whenNewClientConnected = (message: any) => {};
 
   async start(): Promise<void> {
     this.messageContext.start();
     this.messageContext.on(WILL_CONNECT, this.whenNewClientConnected);
   }
 
-  async stop(): Promise<void> {}
+  async stop(): Promise<void> {
+    this.messageContext.dispose();
+  }
   /**
    * 打开端口等待连接
    */

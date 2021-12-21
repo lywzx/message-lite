@@ -11,7 +11,8 @@ export interface IServerConfigBase<T extends (message: any) => void = (message: 
 /**
  * master create server
  */
-export interface IMasterServerConfig<T extends (message: any) => void> extends IServerConfigBase<T> {
+export interface IMasterServerConfig<T extends (message: any) => void = (message: any) => void>
+  extends IServerConfigBase<T> {
   createMasterSender(message: any): (m: any) => void;
 }
 

@@ -1,4 +1,4 @@
-import { IServerConfig } from '../interfaces';
+import { IServerConfigBase } from '../interfaces';
 import { Class } from '../types';
 import { defer, IPromiseDefer } from '../util';
 import { MessageContext } from './message-context';
@@ -31,7 +31,7 @@ export abstract class BaseServer {
    */
   protected _closedDefer: IPromiseDefer<void>;
 
-  constructor(option: IServerConfig) {
+  constructor(option: IServerConfigBase) {
     this.messageContext = new MessageContext(option);
     this._openedDefer = defer<void>();
     this._closedDefer = defer<void>();
