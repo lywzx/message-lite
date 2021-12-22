@@ -1,26 +1,20 @@
-import { EMessageType, IMessageCallData, IMasterServerConfig } from './interfaces';
+import { IMasterServerConfig } from './interfaces';
 import { Class } from './types';
-import { getApiDeclInfo, defer } from './util';
-import { BaseConnectSession, BaseService, MessageContext, WILL_CONNECT, WILL_DISCOUNT } from './libs';
+import { BaseConnectSession, BasicServer, MessageContext, WILL_CONNECT, WILL_DISCOUNT } from './libs';
 
 export interface IOpeningOption {
   clientId: string;
   timeout?: number;
 }
 
-export interface IAddService<T extends BaseService, U extends T> {
-  impl: Class<U>;
-  decl: Class<T>;
-}
-
-export class Master {
+export class Master extends BasicServer {
   protected sessionMap = new Map<string, BaseConnectSession>();
-
-  protected messageContext!: MessageContext;
 
   protected clientIndex = 1000;
 
-  constructor(protected readonly option: IMasterServerConfig) {}
+  constructor(protected readonly option: IMasterServerConfig) {
+    super(option);
+  }
 
   getService<T>(serv: Class<T>): T | undefined {
     throw new Error('api not available!');
@@ -65,39 +59,5 @@ export class Master {
    */
   async close(): Promise<void> {
     this.messageContext.dispose();
-  }
-  /**
-   * 添加服务
-   */
-  addService(services: Array<IAddService<any, any>>) {
-    const messageContext = this.messageContext;
-    services.forEach((it) => {
-      const { impl, decl } = it;
-      const info = getApiDeclInfo(decl);
-      const apiInstance = new impl();
-      info.apis.forEach((api) => {
-        messageContext.on(
-          `${info.name}:${api.method}:call`,
-          async (data: IMessageCallData, option: { timeout?: number }) => {
-            try {
-              const df = defer(option?.timeout);
-              const result = await Promise.race([apiInstance[api.method](data.data), df.promise]);
-              await messageContext.sendMessageWithOutResponse({
-                id: data.id,
-                type: EMessageType.RESPONSE,
-                data: result,
-              });
-            } catch (e) {
-              const err = e as Error;
-              await messageContext.sendMessageWithOutResponse({
-                id: data.id,
-                type: EMessageType.RESPONSE_EXCEPTION,
-                data: err.stack || err.message,
-              });
-            }
-          }
-        );
-      });
-    });
   }
 }

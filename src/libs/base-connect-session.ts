@@ -3,7 +3,10 @@ import { Class } from '../types';
 import { BaseService } from './base-service';
 import { IMessageBaseData } from '../interfaces';
 import { MessageContext } from './message-context';
-import { message } from 'antd';
+
+export interface ISessionSendMessage extends Omit<IMessageBaseData, 'id' | 'channel'> {
+  id?: number;
+}
 
 export class BaseConnectSession {
   /**
@@ -78,10 +81,10 @@ export class BaseConnectSession {
    * send message
    * @param message
    */
-  public sendMessage(message: Pick<IMessageBaseData, 'type' | 'data'>) {
+  public sendMessage(message: ISessionSendMessage) {
     const mContent: IMessageBaseData = {
       ...message,
-      id: this.getMessageId(),
+      id: message.id ?? this.getMessageId(),
       channel: this.getSenderPort(),
     };
     this.sender(mContent);

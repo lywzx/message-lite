@@ -20,8 +20,10 @@ export class ConnectService extends BaseService {
     notify: true,
   })
   /* istanbul ignore next */
-  connect(id: string): Promise<string> {
-    return ApiUnSupport();
+  connect(id: string): Promise<() => Promise<void>> {
+    return () => {
+
+    }
   }
 
   @ApiDeclApi({})

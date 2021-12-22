@@ -1,6 +1,13 @@
 import { EMessageType, IMessageCallData, IMessageEvent, IMessageResponseData, IServerConfigBase } from '../interfaces';
 import { Class } from '../types';
-import { getApiDeclInfo, defer, IPromiseDefer, messageHelper, createMessageEventName, isHandshakeMessage } from '../util';
+import {
+  getApiDeclInfo,
+  defer,
+  IPromiseDefer,
+  messageHelper,
+  createMessageEventName,
+  isHandshakeMessage,
+} from '../util';
 import { BaseService } from './base-service';
 import { Event } from './event';
 import { BaseConnectSession } from './base-connect-session';
@@ -128,6 +135,10 @@ export class MessageContext extends Event {
       }
     }
   };
+
+  public getSession(channel: string) {
+    return this.session.get(channel);
+  }
 
   public async waitMessageResponse(message: IMessageCallData, option: { timeout: number }) {
     const df = defer<any>(option.timeout);

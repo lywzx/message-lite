@@ -1,22 +1,21 @@
 import { ConnectService } from './connect/connect.service';
 import { Class } from './types';
 import { createSlaveService, defer, sendInitMessage } from './util';
-import { BaseConnectSession, BaseService, MessageContext } from './libs';
+import { BaseConnectSession, BaseService, BasicServer, MessageContext } from './libs';
 import { ISlaveClientConfig } from './interfaces';
+import { SlaveConnectImplService } from './connect/slave-connect-impl.service';
 
 export interface IConnectOption {
   name?: string;
   timeout?: number;
 }
 
-export class Slave {
+export class Slave extends BasicServer {
   protected isConnecting = false;
   protected session!: BaseConnectSession;
 
-  protected messageContext: MessageContext;
-
   constructor(protected readonly option: ISlaveClientConfig) {
-    this.messageContext = new MessageContext(option);
+    super(option);
   }
 
   protected serviceMap = new Map<Class<any>, BaseService>();
@@ -30,9 +29,15 @@ export class Slave {
     }
     this.session = new BaseConnectSession(this.option.sendMessage, this.messageContext);
     this.session.name = option.name || '';
+    this.addService([
+      {
+        decl: ConnectService,
+        impl: SlaveConnectImplService,
+      },
+    ]);
     const connectService = this.getService(ConnectService)!;
     // 发送预连接请求
-    await connectService.preConnect(sendInitMessage());
+    await connectService.connect(sendInitMessage());
     // 等待端口打开
     const df = defer<void>(option.timeout || 3000);
     // 等待
