@@ -18,13 +18,13 @@ const app = express();
 const compiler = webpack(WebpackConfig);
 
 app.use(
-    webpackDevMiddleware(compiler, {
-        publicPath: '/__build__/',
-        stats: {
-            colors: true,
-            chunks: false,
-        },
-    })
+  webpackDevMiddleware(compiler, {
+    publicPath: '/__build__/',
+    stats: {
+      colors: true,
+      chunks: false,
+    },
+  })
 );
 
 app.use(webpackHotMiddleware(compiler));
@@ -32,5 +32,5 @@ app.use(webpackHotMiddleware(compiler));
 app.use(express.static(__dirname));
 
 module.exports = app.listen(port, () => {
-    console.log(`Server listening on http://localhost:${port}, Ctrl+C to stop`);
+  console.log(`Server listening on http://localhost:${port}, Ctrl+C to stop`);
 });
