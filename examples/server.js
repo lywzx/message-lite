@@ -9,7 +9,7 @@ const webpackHotMiddleware = require('webpack-hot-middleware');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const WebpackConfig = require('./webpack.dev.config');
 
-const port = process.env.PORT || 8009;
+const port = process.env.PORT || 8008;
 
 const OpenBrowserPlugin = require('open-browser-webpack-plugin');
 WebpackConfig.plugins.push(new OpenBrowserPlugin({ url: `http://localhost:${port}` }));
