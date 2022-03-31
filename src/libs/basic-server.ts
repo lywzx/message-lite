@@ -4,7 +4,7 @@ import { MessageContext } from './message-context';
 import { defer, getApiDeclInfo } from '../util';
 import { BaseService } from './base-service';
 
-export interface IAddService<T extends BaseService, U extends T> {
+export interface IAddService<T extends BaseService = any, U extends T = any> {
   impl: Class<U>;
   decl: Class<T>;
 }

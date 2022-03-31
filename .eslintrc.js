@@ -5,13 +5,22 @@ module.exports = {
     node: true,
   },
   parser: '@typescript-eslint/parser', // Specifies the ESLint parser
-  plugins: ['@typescript-eslint'],
+  plugins: [
+    'react',
+    '@typescript-eslint'
+  ],
   extends: [
     'plugin:@typescript-eslint/recommended', // Uses the recommended rules from the @typescript-eslint/eslint-plugin
+    'plugin:react/recommended',
     'prettier',
     'prettier/@typescript-eslint', // Uses eslint-config-prettier to disable ESLint rules from @typescript-eslint/eslint-plugin that would conflict with prettier
     'plugin:prettier/recommended', // Enables eslint-plugin-prettier and displays prettier errors as ESLint errors. Make sure this is always the last configuration in the extends array.
   ],
+  settings: {
+    react: {
+      version: 'detect'
+    }
+  },
   rules: {
     semi: 2,
     'object-curly-newline': 1, // Incompatible with prettier
@@ -26,5 +35,7 @@ module.exports = {
     '@typescript-eslint/indent': 'off',
     'linebreak-style': ['error', 'unix'],
     'no-unused-vars': ['error', { args: 'none' }],
+    "react/jsx-uses-react": "error",
+    "react/jsx-uses-vars": "error",
   },
 };
