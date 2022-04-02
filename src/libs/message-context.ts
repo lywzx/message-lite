@@ -35,6 +35,7 @@ export class MessageContext extends Event {
   constructor(protected readonly option: IMessageConfig) {
     super();
     this.pendingMap = new Map();
+    this.session = new Map<string, ConnectSession>();
     this.t = option.transformMessage || ((m: any) => m);
   }
 
