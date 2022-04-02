@@ -1,14 +1,14 @@
 import { createSlaveService, defer, IPromiseDefer } from '../util';
 import { Class } from '../types';
-import { BaseService } from './base-service';
-import { IMessageBaseData } from '../interfaces';
+import { IEventer, IMessageBaseData } from '../interfaces';
 import { MessageContext } from './message-context';
+import { MBaseService } from '../service';
 
 export interface ISessionSendMessage extends Omit<IMessageBaseData, 'id' | 'channel'> {
   id?: number;
 }
 
-export class BaseConnectSession {
+export class ConnectSession {
   /**
    * wait session opened
    */
@@ -46,6 +46,12 @@ export class BaseConnectSession {
   protected port2: string;
 
   /**
+   * 内部消息中转
+   * @protected
+   */
+  protected eventer: IEventer;
+
+  /**
    * session name
    * @protected
    */
@@ -57,9 +63,30 @@ export class BaseConnectSession {
    */
   protected messageId = 0;
 
-  constructor(protected readonly sender: (message: any) => void, protected readonly messageContext: MessageContext) {
+  /**
+   * message context
+   * @protected
+   */
+  protected messageContext: MessageContext;
+
+  constructor(protected readonly sender: (message: any) => void) {
     this._openedDefer = defer<void>();
     this._closedDefer = defer<void>();
+  }
+
+  /**
+   * attach message context
+   * @param messageContext
+   */
+  public attachMessageContext(messageContext: MessageContext) {
+    this.messageContext = messageContext;
+  }
+
+  /**
+   * detach message context
+   */
+  public detachMessageContext() {
+    this.messageContext = null!;
   }
 
   /**
@@ -92,9 +119,19 @@ export class BaseConnectSession {
   }
 
   /**
+   * send message and waitting response
+   * @param message
+   */
+  public sendMessageWithResponse(message: ISessionSendMessage, timeout?: number) {
+  }
+
+
+
+
+  /**
    * 获取某个服务
    */
-  getService<T extends BaseService>(serv: Class<T>) {
+  getService<T extends MBaseService>(serv: Class<T>) {
     return createSlaveService(this.messageContext, this, serv);
   }
 }

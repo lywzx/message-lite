@@ -1,4 +1,4 @@
-import { EMessageType, IMessageCallData, IMessageEvent, IMessageResponseData, IServerConfigBase } from '../interfaces';
+import { EMessageType, IMessageCallData, IMessageEvent, IMessageResponseData, IMessageConfig } from '../interfaces';
 import { Class } from '../types';
 import {
   getApiDeclInfo,
@@ -8,10 +8,10 @@ import {
   createMessageEventName,
   isHandshakeMessage,
 } from '../util';
-import { BaseService } from './base-service';
 import { Event } from './event';
-import { BaseConnectSession } from './base-connect-session';
+import { ConnectSession } from './connect-session';
 import { CONST_SERVICE_NAME } from '../connect/connect.service';
+import { MBaseService } from '../service';
 
 /**
  * some client try connect
@@ -26,13 +26,13 @@ export const WILL_DISCOUNT = 'client:will:disconnect';
 export class MessageContext extends Event {
   protected pendingMap: Map<string, IPromiseDefer<any>>;
 
-  protected session: Map<string, BaseConnectSession>;
+  protected session: Map<string, ConnectSession>;
 
   protected isReady = false;
 
   protected t: (message: any) => any;
 
-  constructor(protected readonly option: IServerConfigBase) {
+  constructor(protected readonly option: IMessageConfig) {
     super();
     this.pendingMap = new Map();
     this.t = option.transformMessage || ((m: any) => m);
@@ -50,14 +50,17 @@ export class MessageContext extends Event {
     this.isReady = true;
   }
 
-  public attachSession(session: BaseConnectSession) {
+  public attachSession(session: ConnectSession) {
+    session.attachMessageContext(this);
     this.session.set(session.getReceiverPort(), session);
   }
 
-  public detachSession(session: BaseConnectSession | string) {
+  public detachSession(session: ConnectSession | string) {
     const key = typeof session === 'string' ? session : session.getReceiverPort();
     if (this.session.has(key)) {
+      const s = this.session.get(key)!;
       this.session.delete(key);
+      s.detachMessageContext();
     }
   }
 
@@ -67,7 +70,7 @@ export class MessageContext extends Event {
     this.option.unListenMessage(this.handMessage);
   }
 
-  public whenServiceCalled<T extends BaseService>(
+  public whenServiceCalled<T extends MBaseService>(
     serv: Class<T>,
     option: {
       method: string;

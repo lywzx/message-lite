@@ -1,4 +1,4 @@
-import { ApiDecl, ApiDeclApi, ApiUnSupport, BaseService } from 'message-lite';
+import { ApiDecl, ApiDeclApi, ApiUnSupport, MBaseService } from 'message-lite';
 
 export interface IMessageOption {
   /**
@@ -20,7 +20,7 @@ export type ImessageServiceType = string | IMessageOption;
 @ApiDecl({
   name: 'com.example.parent.message.service',
 })
-export class MessageService extends BaseService {
+export class MessageService extends MBaseService {
   @ApiDeclApi()
   info(content: ImessageServiceType): Promise<void> {
     return ApiUnSupport();

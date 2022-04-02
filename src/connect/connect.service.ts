@@ -1,13 +1,13 @@
 import { ApiDecl, ApiDeclApi } from '../decorator';
-import { BaseService } from '../libs';
-import { ApiUnSupport, IPromiseDefer } from '../util';
+import { ApiUnSupport } from '../util';
+import { MBaseService } from '../service';
 
 export const CONST_SERVICE_NAME = '$$__message.inner.connect.service__$$';
 
 @ApiDecl({
   name: CONST_SERVICE_NAME,
 })
-export class ConnectService extends BaseService {
+export class ConnectService extends MBaseService {
   @ApiDeclApi({
     notify: true,
   })
@@ -20,10 +20,8 @@ export class ConnectService extends BaseService {
     notify: true,
   })
   /* istanbul ignore next */
-  connect(id: string): Promise<() => Promise<void>> {
-    return () => {
-
-    }
+  async connect(id: string): Promise<() => Promise<void>> {
+    return () => Promise.resolve();
   }
 
   @ApiDeclApi({})

@@ -6,11 +6,11 @@ import { ApiUnSupport, defer, IPromiseDefer } from '../util';
 export class SlaveConnectImplService extends ConnectService {
   protected _connectDefer: IPromiseDefer<void>;
 
-  preConnect(data: string): Promise<void> {
+  async preConnect(data: string): Promise<void> {
     this._connectDefer = defer();
   }
 
-  connect(id: string): Promise<string> {
+  async connect(id: string) {
     return ApiUnSupport();
   }
 

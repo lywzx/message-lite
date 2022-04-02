@@ -1,9 +1,10 @@
 import { ConnectService } from './connect/connect.service';
 import { Class } from './types';
-import { createSlaveService, defer, sendInitMessage } from './util';
-import { BaseConnectSession, BaseService, BasicServer, MessageContext } from './libs';
+import { sendInitMessage } from './util';
+import { ConnectSession, BasicServer } from './libs';
 import { ISlaveClientConfig } from './interfaces';
 import { SlaveConnectImplService } from './connect/slave-connect-impl.service';
+import { MBaseService } from './service';
 
 export interface IConnectOption {
   name?: string;
@@ -12,13 +13,13 @@ export interface IConnectOption {
 
 export class Slave extends BasicServer {
   protected isConnecting = false;
-  protected session!: BaseConnectSession;
+  protected session!: ConnectSession;
 
   constructor(protected readonly option: ISlaveClientConfig) {
     super(option);
   }
 
-  protected serviceMap = new Map<Class<any>, BaseService>();
+  protected serviceMap = new Map<Class<any>, MBaseService>();
 
   /**
    * 主动连接Master
@@ -27,7 +28,8 @@ export class Slave extends BasicServer {
     if (this.isConnecting) {
       throw new Error('client is connecting server, please not call twice!');
     }
-    this.session = new BaseConnectSession(this.option.sendMessage, this.messageContext);
+    this.session = new ConnectSession(this.option.sendMessage);
+    this.messageContext.attachSession(this.session);
     this.session.name = option.name || '';
     this.addService([
       {
@@ -39,23 +41,6 @@ export class Slave extends BasicServer {
     // 发送预连接请求
     await connectService.connect(sendInitMessage());
     // 等待端口打开
-    const df = defer<void>(option.timeout || 3000);
-    // 等待
-    await this._openedDefer.resolve(df.promise);
-
-    try {
-      const service = createSlaveService(this.messageContext, ConnectService);
-      this.messageContext.start();
-      this.messageContext.setChannel(option.clientId);
-      const result = await service.connect(option.clientId, {
-        timeout: option.timeout,
-      });
-      this.messageContext.setChannel(result);
-      this.messageContext.readied();
-      this._openedDefer.resolve();
-    } catch (e) {
-      this._openedDefer.reject(e);
-    }
   }
 
   /**
@@ -68,7 +53,7 @@ export class Slave extends BasicServer {
    * call service
    * @param serv
    */
-  getService<T extends BaseService>(serv: Class<T>): T | undefined {
+  getService<T extends MBaseService>(serv: Class<T>): T | undefined {
     if (this.serviceMap.has(serv)) {
       return this.serviceMap.get(serv)! as T;
     }

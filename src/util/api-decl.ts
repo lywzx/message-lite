@@ -1,5 +1,5 @@
-import { BaseService } from '../libs';
 import { Class } from '../types';
+import { MBaseService } from '../service';
 
 export interface IApiDeclFullOption {
   name: string;
@@ -48,10 +48,10 @@ export interface IApiDeclFullApiEvent extends IApiCallOrResponseTransform {
   name: string;
 }
 
-const API_DECL_MAP = new Map<Class<BaseService>, IApiDeclFullOption>();
+const API_DECL_MAP = new Map<Class<MBaseService>, IApiDeclFullOption>();
 export function ApiDecl<T>(decl: Class<T>, name: string) {
-  if (!BaseService.isPrototypeOf(decl)) {
-    throw new Error(`${decl.name} should extends ${BaseService.name}`);
+  if (!MBaseService.isPrototypeOf(decl)) {
+    throw new Error(`${decl.name} should extends ${MBaseService.name}`);
   }
   const option: IApiDeclFullOption = {
     name,
@@ -102,8 +102,8 @@ export function apiDeclMethodOrEvent<T>(
  * @param inherit
  */
 export function getApiDeclInfo<T>(decl: Class<T>, inherit = true): IApiDeclFullOption {
-  if (!BaseService.isPrototypeOf(decl)) {
-    throw new Error('service is not extends BaseService');
+  if (!MBaseService.isPrototypeOf(decl)) {
+    throw new Error('service is not extends MBaseService');
   }
   const opt: IApiDeclFullOption = {
     name: '',

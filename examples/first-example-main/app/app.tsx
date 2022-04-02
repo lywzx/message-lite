@@ -1,12 +1,13 @@
-import React from 'react';
-import { Layout } from 'antd';
+import React, { useState } from 'react';
+import Layout from 'antd/lib/layout';
+import { SappContainer } from './sapp-container';
 
 export interface ISappInState {
   id: string;
 }
 
 export function App() {
-  // const [apps, setApps] = useState<ISappInState[]>([]);
+  const [apps, setApps] = useState<ISappInState[]>([{ id: '1' }]);
   // const [asyncApp, setAsyncApp] = useState<Sapp>();
   //
   // const onClick = async () => {
@@ -18,10 +19,10 @@ export function App() {
 
   return (
     <Layout className="app-layout">
-      {/*<Layout.Sider theme={'light'} className="app-layout-left">
+      <Layout.Sider theme={'light'} className="app-layout-left">
         <a href="/">返回</a>
         <h2>主应用</h2>
-        <Space direction="vertical">
+        {/*<Space direction="vertical">
           <Button disabled={firstAppIsOpened} type="primary" onClick={bootstrapMiniApp.bind(null, CHILD_FIRST_APP_ID)}>
             打开小程序1
           </Button>
@@ -40,13 +41,14 @@ export function App() {
           </Button>
           <div>异步应用</div>
           <div id="async-app"></div>
-        </Space>
+        </Space>*/}
       </Layout.Sider>
       <Layout.Content className="app-layout-content">
         {apps.map((app) => {
+          // eslint-disable-next-line react/jsx-no-undef
           return <SappContainer key={app.id} app={app} />;
         })}
-      </Layout.Content>*/}
+      </Layout.Content>
     </Layout>
   );
 }

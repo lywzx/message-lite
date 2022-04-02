@@ -1,10 +1,10 @@
-import { EMessageType, IMessageCallData, IServerConfigBase } from '../interfaces';
+import { EMessageType, IMessageCallData, IMessageConfig } from '../interfaces';
 import { Class } from '../types';
 import { MessageContext } from './message-context';
 import { defer, getApiDeclInfo } from '../util';
-import { BaseService } from './base-service';
+import { MBaseService } from '../service';
 
-export interface IAddService<T extends BaseService = any, U extends T = any> {
+export interface IAddService<T extends MBaseService = any, U extends T = any> {
   impl: Class<U>;
   decl: Class<T>;
 }
@@ -12,7 +12,7 @@ export interface IAddService<T extends BaseService = any, U extends T = any> {
 export abstract class BasicServer {
   protected messageContext: MessageContext;
 
-  constructor(option: IServerConfigBase) {
+  constructor(option: IMessageConfig) {
     this.messageContext = new MessageContext(option);
   }
 

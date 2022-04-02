@@ -1,4 +1,4 @@
-export interface IServerConfigBase<T extends (message: any) => void = (message: any) => void> {
+export interface IMessageConfig<T extends (message: any) => void = (message: any) => void> {
   listenMessage(fn: T): void;
   unListenMessage(fn: T): void;
   /**
@@ -12,7 +12,7 @@ export interface IServerConfigBase<T extends (message: any) => void = (message: 
  * master create server
  */
 export interface IMasterServerConfig<T extends (message: any) => void = (message: any) => void>
-  extends IServerConfigBase<T> {
+  extends IMessageConfig<T> {
   createMasterSender(message: any): (m: any) => void;
 }
 
@@ -20,6 +20,6 @@ export interface IMasterServerConfig<T extends (message: any) => void = (message
  * slave server config
  */
 export interface ISlaveClientConfig<T extends (message: any) => void = (message: any) => void>
-  extends IServerConfigBase<T> {
+  extends IMessageConfig<T> {
   sendMessage(message: any): void;
 }

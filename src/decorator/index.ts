@@ -1,4 +1,3 @@
-import { BaseService } from '../libs';
 import { Class } from '../types';
 import {
   ApiDecl as InnerApiDecl,
@@ -8,6 +7,7 @@ import {
   IApiDeclFullApiEvent,
   getApiDeclInfo,
 } from '../util/api-decl';
+import { MBaseService } from '../service';
 
 /**
  * decl api
@@ -21,7 +21,7 @@ export interface IApiDeclOption {
  *
  */
 export function ApiDecl(option: IApiDeclOption) {
-  return function <T extends BaseService>(target: Class<T>) {
+  return function <T extends MBaseService>(target: Class<T>) {
     InnerApiDecl(target, option.name);
   };
 }
@@ -32,7 +32,7 @@ export function ApiDecl(option: IApiDeclOption) {
  */
 export function ApiDeclApi(option: Omit<IApiDeclFullApi, 'method'> = {}) {
   return function api<T extends (...args: any) => Promise<any>>(
-    target: Class<BaseService>['prototype'],
+    target: Class<MBaseService>['prototype'],
     propertyKey: string | symbol,
     descriptor: TypedPropertyDescriptor<T>
   ) {
@@ -52,7 +52,7 @@ export function ApiDeclApi(option: Omit<IApiDeclFullApi, 'method'> = {}) {
  * decl api subject
  */
 export function ApiDeclEvent(option: Omit<IApiDeclFullApiEvent, 'name'> = {}) {
-  return function declObservable<T extends BaseService>(target: Class<T>['prototype'], propertyKey: string | symbol) {
+  return function declObservable<T extends MBaseService>(target: Class<T>['prototype'], propertyKey: string | symbol) {
     apiDeclMethodOrEvent(
       target.constructor,
       {
@@ -75,7 +75,7 @@ export function ApiDeclEvent(option: Omit<IApiDeclFullApiEvent, 'name'> = {}) {
  * @param option
  */
 export function ApiImpl() {
-  return function <T extends BaseService>(serv: Class<T>) {
+  return function <T extends MBaseService>(serv: Class<T>) {
     const message = `class ${serv.name} should extends impl service`;
     try {
       getApiDeclInfo(serv, false);

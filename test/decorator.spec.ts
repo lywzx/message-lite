@@ -1,7 +1,7 @@
 import { getApiDeclInfo, IApiCallTimeout, IApiDeclFullOption } from '../src/util';
 import { ConnectService } from '../src/connect/connect.service';
 import { expect } from 'chai';
-import { ApiDecl, ApiDeclApi, ApiDeclEvent, ApiImpl, ApiUnSupport, BaseService, IEventer } from '../src';
+import { ApiDecl, ApiDeclApi, ApiDeclEvent, ApiImpl, ApiUnSupport, MBaseService, IEventer } from '../src';
 
 const connectServiceInfo: IApiDeclFullOption = {
   name: '$$message.inner.connect.service',
@@ -50,7 +50,7 @@ describe('#decorator test impl', () => {
   it('should api decl method or disconnect should override', function () {
     class C extends ConnectService {
       @ApiDeclApi()
-      connect(id: string, option?: IApiCallTimeout): Promise<string> {
+      connect(id: string, option?: IApiCallTimeout) {
         return ApiUnSupport();
       }
     }
@@ -143,7 +143,7 @@ describe('#decorator test impl', () => {
     expect(() => {
       @ApiImpl()
       // eslint-disable-next-line no-unused-vars
-      class A extends BaseService {}
+      class A extends MBaseService {}
     }).to.be.throw('can not find decl');
   });
 
@@ -154,7 +154,7 @@ describe('#decorator test impl', () => {
         name: 'test',
       })
       // eslint-disable-next-line no-unused-vars
-      class A extends BaseService {}
+      class A extends MBaseService {}
     }).to.be.throw('should extends impl service');
   });
 

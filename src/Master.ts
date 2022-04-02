@@ -1,6 +1,6 @@
 import { IMasterServerConfig } from './interfaces';
 import { Class } from './types';
-import { BaseConnectSession, BasicServer, MessageContext, WILL_CONNECT, WILL_DISCOUNT } from './libs';
+import { ConnectSession, BasicServer, MessageContext, WILL_CONNECT, WILL_DISCOUNT } from './libs';
 
 export interface IOpeningOption {
   clientId: string;
@@ -8,7 +8,7 @@ export interface IOpeningOption {
 }
 
 export class Master extends BasicServer {
-  protected sessionMap = new Map<string, BaseConnectSession>();
+  protected sessionMap = new Map<string, ConnectSession>();
 
   protected clientIndex = 1000;
 

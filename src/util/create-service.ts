@@ -1,7 +1,8 @@
-import { BaseConnectSession, BaseService, MessageContext, ServiceEventer } from '../libs';
+import { ConnectSession, MessageContext, ServiceEventer } from '../libs';
 import { Class } from '../types';
 import { getApiDeclInfo, IApiDeclFullApi } from './api-decl';
 import { EMessageType, IMessageCallData } from '../interfaces';
+import { MBaseService } from '../service';
 
 /**
  * 获取调用服务
@@ -9,9 +10,9 @@ import { EMessageType, IMessageCallData } from '../interfaces';
  * @param session
  * @param serv
  */
-export function createSlaveService<T extends BaseService>(
+export function createSlaveService<T extends MBaseService>(
   messageContext: MessageContext,
-  session: BaseConnectSession,
+  session: ConnectSession,
   serv: Class<T>
 ) {
   const s = new serv();

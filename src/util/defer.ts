@@ -13,7 +13,10 @@ export interface IPromiseDefer<T> {
 /**
  * 生成promise的defer对象
  */
-export function defer<T>(timeout?: number, exception?: () => Error): IPromiseDefer<T> {
+export function defer<T>(
+  timeout: number | undefined = undefined,
+  exception: (timeout?: number) => Error = (timeout) => new Error(`defer waiting timeout, ${timeout}ms`)
+): IPromiseDefer<T> {
   let resolve: (value?: T | PromiseLike<T>) => void;
   let reject: (it?: any) => void;
   let timer: any;
@@ -32,7 +35,7 @@ export function defer<T>(timeout?: number, exception?: () => Error): IPromiseDef
     if (typeof timeout === 'number') {
       timer = setTimeout(() => {
         timer = undefined;
-        reject(typeof exception === 'function' ? exception() : new Error(`defer waiting timeout, ${timeout}ms`));
+        reject(exception(timeout));
       }, timeout);
     }
   });

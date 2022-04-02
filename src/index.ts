@@ -4,3 +4,4 @@ export * from './util/index-export';
 export * from './decorator';
 export * from './Master';
 export * from './Slave';
+export * from './service';

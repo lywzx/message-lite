@@ -26,7 +26,9 @@ export function SappContainer(props: ISappContainerProps) {
       style={{ width: '300px', height: '100%', display: 'flex', flexDirection: 'column' }}
       bodyStyle={{ flex: 1 }}
     >
-      <div className="sapp-container" ref={ref}></div>
+      <div className="sapp-container" ref={ref}>
+        <iframe className="sapp-frame" src="/first-example-child-1" frameBorder="0" />
+      </div>
     </Card>
   );
 }
