@@ -1,8 +1,11 @@
 import { createSlaveService, defer, IPromiseDefer } from '../util';
 import { Class } from '../types';
-import { IEventer, IMessageBaseData } from '../interfaces';
+import { IMessageBaseData } from '../interfaces';
 import { MessageContext } from './message-context';
 import { MBaseService } from '../service';
+import { uniqId } from '../util/random';
+import { createPort } from '../util/session-port';
+import { Event } from './event';
 
 export interface ISessionSendMessage extends Omit<IMessageBaseData, 'id' | 'channel'> {
   id?: number;
@@ -38,24 +41,24 @@ export class ConnectSession {
    * self port
    * @protected
    */
-  protected port1: string;
+  protected port1 = 0;
   /**
    * remote port
    * @protected
    */
-  protected port2: string;
+  protected port2 = -1;
 
   /**
    * 内部消息中转
    * @protected
    */
-  protected eventer: IEventer;
+  protected eventer: Event;
 
   /**
    * session name
    * @protected
    */
-  public name: string;
+  public name = '';
 
   /**
    * message id
@@ -72,6 +75,8 @@ export class ConnectSession {
   constructor(protected readonly sender: (message: any) => void) {
     this._openedDefer = defer<void>();
     this._closedDefer = defer<void>();
+    this.port1 = uniqId();
+    this.eventer = new Event();
   }
 
   /**
@@ -97,11 +102,15 @@ export class ConnectSession {
   }
 
   public getSenderPort() {
-    return [this.port1, this.name, this.port2].join('➜');
+    return createPort(this.name, this.port1, this.port2);
   }
 
   public getReceiverPort() {
-    return [this.port2, this.name, this.port1].join('➜');
+    return createPort(this.name, this.port2, this.port1);
+  }
+
+  public setPort2(port: number) {
+    this.port2 = port;
   }
 
   /**
@@ -121,12 +130,16 @@ export class ConnectSession {
   /**
    * send message and waitting response
    * @param message
+   * @param timeout
    */
-  public sendMessageWithResponse(message: ISessionSendMessage, timeout?: number) {
+  public sendMessageWithResponse(message: ISessionSendMessage, timeout = 30000) {
+    const { id } = this.sendMessage(message);
+    if (typeof id !== 'undefined') {
+      this.eventer.once(id.toString(), () => {
+        console.log(111);
+      });
+    }
   }
-
-
-
 
   /**
    * 获取某个服务

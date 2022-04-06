@@ -10,15 +10,15 @@ export class Event {
   }
 
   off(event: string, fn?: (...args: any[]) => any) {
-    const callbacks = this.eventer.get(event);
-    if (callbacks && callbacks.length) {
+    if (this.eventer.has(event)) {
+      let callbacks = this.eventer.get(event)!;
       if (fn) {
-        this.eventer.set(
-          event,
-          callbacks.filter((item) => item !== fn)
-        );
-      } else {
+        callbacks = callbacks.filter((item) => item !== fn);
+      }
+      if (!fn || !callbacks.length) {
         this.eventer.delete(event);
+      } else {
+        this.eventer.set(event, callbacks);
       }
     }
   }

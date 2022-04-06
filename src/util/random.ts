@@ -13,11 +13,10 @@ export function randomNum(min: number, max: number): number {
   return 0;
 }
 
-let init = 0;
 /**
  * generate uniqId
- * @param prefix
  */
-export function uniqId(): number {
-  return ++init;
-}
+export const uniqId = (() => {
+  let init = 0;
+  return () => ++init;
+})();
