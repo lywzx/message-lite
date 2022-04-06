@@ -1,9 +1,7 @@
-import { ConnectService } from './connect/connect.service';
 import { Class } from './types';
 import { sendInitMessage } from './util';
-import { ConnectSession, BasicServer } from './libs';
-import { ISlaveClientConfig } from './interfaces';
-import { SlaveConnectImplService } from './connect/slave-connect-impl.service';
+import { BasicServer, ConnectSession } from './libs';
+import { EMessageType, ISlaveClientConfig } from './interfaces';
 import { MBaseService } from './service';
 
 export interface IConnectOption {
@@ -28,19 +26,14 @@ export class Slave extends BasicServer {
     if (this.isConnecting) {
       throw new Error('client is connecting server, please not call twice!');
     }
-    this.session = new ConnectSession(this.option.sendMessage);
+    const session = (this.session = new ConnectSession(this.option.sendMessage));
     this.messageContext.attachSession(this.session);
     this.session.name = option.name || '';
-    this.addService([
-      {
-        decl: ConnectService,
-        impl: SlaveConnectImplService,
-      },
-    ]);
-    const connectService = this.getService(ConnectService)!;
-    // 发送预连接请求
-    await connectService.connect(sendInitMessage());
-    // 等待端口打开
+
+    session.sendMessageWithResponse({
+      type: EMessageType.HANDSHAKE,
+      data: sendInitMessage(),
+    });
   }
 
   /**

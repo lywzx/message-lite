@@ -3,6 +3,14 @@
  */
 export enum EMessageType {
   /**
+   * 握手协议
+   */
+  HANDSHAKE,
+  /**
+   * 分手协议
+   */
+  GOOD_BYE,
+  /**
    * 方法调用
    */
   CALL,

@@ -1,6 +1,6 @@
 import { createSlaveService, defer, IPromiseDefer } from '../util';
 import { Class } from '../types';
-import { IMessageBaseData } from '../interfaces';
+import { EMessageType, IMessageBaseData } from '../interfaces';
 import { MessageContext } from './message-context';
 import { MBaseService } from '../service';
 import { uniqId } from '../util/random';
@@ -123,7 +123,9 @@ export class ConnectSession {
       id: message.id ?? this.getMessageId(),
       channel: this.getSenderPort(),
     };
-    this.sender(mContent);
+    Promise.resolve().then(() => {
+      this.sender(mContent);
+    });
     return message;
   }
 
@@ -134,11 +136,27 @@ export class ConnectSession {
    */
   public sendMessageWithResponse(message: ISessionSendMessage, timeout = 30000) {
     const { id } = this.sendMessage(message);
-    if (typeof id !== 'undefined') {
-      this.eventer.once(id.toString(), () => {
-        console.log(111);
-      });
+    if (typeof id !== 'number') {
+      throw new Error('message id not exists!');
     }
+
+    const { resolve, reject, promise } = defer(timeout);
+
+    const eventId = `res:${id}`;
+    const listener = (data: IMessageBaseData) => {
+      if (data.type === EMessageType.RESPONSE) {
+        resolve(data.data);
+      } else if (data.type === EMessageType.RESPONSE_EXCEPTION) {
+        reject(data.data);
+      }
+    };
+    this.eventer.on(eventId, listener);
+
+    promise.finally(() => {
+      this.eventer.off(eventId);
+    });
+
+    return promise;
   }
 
   /**
