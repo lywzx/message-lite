@@ -2,8 +2,7 @@ import { EMessageType, IMasterServerConfig, IMessageHandshakeData } from './inte
 import { Class } from './types';
 import { BasicServer, ConnectSession, MessageContext, WILL_CONNECT, WILL_DISCOUNT } from './libs';
 import { parsePort } from './util/session-port';
-import { uniqId } from './util/random';
-import { parseHandshakeMessage, sendHandshakeResponseMessage } from './util';
+import { EHandshakeMessageType, parseHandshakeMessage, sendHandshakeResponseMessage } from './util';
 
 export interface IOpeningOption {
   clientId: string;
@@ -24,20 +23,27 @@ export class Master extends BasicServer {
   }
 
   protected whenNewClientConnected = (message: any) => {
-    const option = this.option;
+    const { option, messageContext } = this;
     const connectMessage = (
       option.transformMessage ? option.transformMessage(message) : message
     ) as IMessageHandshakeData;
     const { id, channel, data } = connectMessage;
     const parsedHandshake = parseHandshakeMessage(data);
-    if (!parsedHandshake) {
+    if (!parsedHandshake || parsedHandshake.type !== EHandshakeMessageType.INIT) {
       return;
     }
     const info = parsePort(channel);
+    const handshakeResponseMessage = sendHandshakeResponseMessage(data);
+    const handshakeResponseMessageObj = parseHandshakeMessage(handshakeResponseMessage);
     const session = new ConnectSession(info.name, this.option.createMasterSender(message));
-    const port2 = uniqId();
-    session.setPort2(port2);
-    this.messageContext.attachSession(session);
+    session.setPort2(handshakeResponseMessageObj!.offset);
+
+    // 响应握手信息
+    session.sendMessage({
+      type: EMessageType.HANDSHAKE,
+      data: handshakeResponseMessage,
+    });
+
     // 发送响应信息
     const response = session.sendMessageWithResponse({
       data: sendHandshakeResponseMessage(data),
