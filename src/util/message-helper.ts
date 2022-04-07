@@ -7,6 +7,8 @@ export function messageHelper(data: any): data is IMessageBaseData {
     typeof data === 'object' &&
     data.channel &&
     [
+      EMessageType.HANDSHAKE,
+      EMessageType.GOOD_BYE,
       EMessageType.CALL,
       EMessageType.RESPONSE,
       EMessageType.RESPONSE_EXCEPTION,

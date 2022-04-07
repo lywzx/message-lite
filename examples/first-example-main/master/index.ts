@@ -13,6 +13,7 @@ export const master = new Master({
     window.removeEventListener('message', fn, false);
   },
   transformMessage(event: MessageEvent) {
+    console.log('1111111', event);
     return event.data;
   },
 });

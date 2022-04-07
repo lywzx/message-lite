@@ -36,7 +36,7 @@ export enum EMessageType {
 /**
  * 基础消息
  */
-export interface IMessageBaseData {
+export interface IMessageBaseData<T = any> {
   /**
    * 消息ID
    */
@@ -52,24 +52,33 @@ export interface IMessageBaseData {
   /**
    * 消息数据
    */
-  data?: any;
+  data?: T;
+}
+
+/**
+ * 握手通信协议
+ */
+export interface IMessageHandshakeData<T = string> extends Required<IMessageBaseData<T>> {
+  /**
+   * 建立连接/断开连接
+   */
+  type: EMessageType.HANDSHAKE | EMessageType.GOOD_BYE;
 }
 
 /**
  * 调用消息后，响应数据
  */
-export interface IMessageResponseData extends IMessageBaseData {
+export interface IMessageResponseData<T = any> extends Required<IMessageBaseData<T>> {
   /**
    * 响应消息
    */
   type: EMessageType.RESPONSE | EMessageType.RESPONSE_EXCEPTION;
-  data: any;
 }
 
 /**
  * 方法调用或消息消息
  */
-export interface IMessageCallData extends IMessageBaseData {
+export interface IMessageCallData<T = any[]> extends Required<IMessageBaseData<T>> {
   /**
    * 调用的服务名称
    */
@@ -82,10 +91,6 @@ export interface IMessageCallData extends IMessageBaseData {
    * 消息类型
    */
   type: EMessageType.CALL;
-  /**
-   * 调用消息内容
-   */
-  data: any[];
 }
 
 /**
@@ -100,5 +105,8 @@ export interface IMessageEvent extends IMessageBaseData {
    * 消息名称
    */
   event: string;
+  /**
+   * 事件相关消息
+   */
   type: EMessageType.EVENT_OFF | EMessageType.EVENT_ON | EMessageType.EVENT;
 }

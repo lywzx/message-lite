@@ -26,9 +26,8 @@ export class Slave extends BasicServer {
     if (this.isConnecting) {
       throw new Error('client is connecting server, please not call twice!');
     }
-    const session = (this.session = new ConnectSession(this.option.sendMessage));
+    const session = (this.session = new ConnectSession(option.name, this.option.sendMessage));
     this.messageContext.attachSession(this.session);
-    this.session.name = option.name || '';
 
     session.sendMessageWithResponse({
       type: EMessageType.HANDSHAKE,

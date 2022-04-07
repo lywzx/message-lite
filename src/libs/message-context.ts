@@ -104,9 +104,8 @@ export class MessageContext extends Event {
     if (messageHelper(message)) {
       // 连接类消息
       const { channel, id = '', data, type } = message;
-
       const session = this.session.get(channel);
-      if (!session) {
+      /*if (!session) {
         if (type === EMessageType.CALL && (message as IMessageCallData).service === CONST_SERVICE_NAME) {
           if ((message as IMessageCallData).method === 'connect') {
             isHandshakeMessage(data) && this.emit(WILL_CONNECT, message, originMessage);
@@ -115,8 +114,18 @@ export class MessageContext extends Event {
           }
         }
         return;
-      }
+      }*/
       switch (type) {
+        case EMessageType.HANDSHAKE: {
+          // 建立连接
+          this.emit(WILL_CONNECT, originMessage);
+          break;
+        }
+        case EMessageType.GOOD_BYE: {
+          // 断开连接
+          this.emit(WILL_DISCOUNT, message);
+          break;
+        }
         case EMessageType.EVENT_ON:
         case EMessageType.EVENT_OFF:
         case EMessageType.EVENT:

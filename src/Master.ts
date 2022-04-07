@@ -1,6 +1,9 @@
-import { IMasterServerConfig } from './interfaces';
+import { EMessageType, IMasterServerConfig, IMessageHandshakeData } from './interfaces';
 import { Class } from './types';
-import { ConnectSession, BasicServer, MessageContext, WILL_CONNECT, WILL_DISCOUNT } from './libs';
+import { BasicServer, ConnectSession, MessageContext, WILL_CONNECT, WILL_DISCOUNT } from './libs';
+import { parsePort } from './util/session-port';
+import { uniqId } from './util/random';
+import { parseHandshakeMessage, sendHandshakeResponseMessage } from './util';
 
 export interface IOpeningOption {
   clientId: string;
@@ -20,7 +23,31 @@ export class Master extends BasicServer {
     throw new Error('api not available!');
   }
 
-  protected whenNewClientConnected = (message: any) => {};
+  protected whenNewClientConnected = (message: any) => {
+    const option = this.option;
+    const connectMessage = (
+      option.transformMessage ? option.transformMessage(message) : message
+    ) as IMessageHandshakeData;
+    const { id, channel, data } = connectMessage;
+    const parsedHandshake = parseHandshakeMessage(data);
+    if (!parsedHandshake) {
+      return;
+    }
+    const info = parsePort(channel);
+    const session = new ConnectSession(info.name, this.option.createMasterSender(message));
+    const port2 = uniqId();
+    session.setPort2(port2);
+    this.messageContext.attachSession(session);
+    // 发送响应信息
+    const response = session.sendMessageWithResponse({
+      data: sendHandshakeResponseMessage(data),
+      type: EMessageType.RESPONSE,
+    });
+
+    response.catch(() => {
+      this.messageContext.detachSession(session);
+    });
+  };
 
   protected whenClientWillDisConnected = (message: any) => {};
 

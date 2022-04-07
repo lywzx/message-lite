@@ -6,6 +6,7 @@ import { MBaseService } from '../service';
 import { uniqId } from '../util/random';
 import { createPort } from '../util/session-port';
 import { Event } from './event';
+import { isBoolean } from 'lodash';
 
 export interface ISessionSendMessage extends Omit<IMessageBaseData, 'id' | 'channel'> {
   id?: number;
@@ -55,12 +56,6 @@ export class ConnectSession {
   protected eventer: Event;
 
   /**
-   * session name
-   * @protected
-   */
-  public name = '';
-
-  /**
    * message id
    * @protected
    */
@@ -72,7 +67,7 @@ export class ConnectSession {
    */
   protected messageContext: MessageContext;
 
-  constructor(protected readonly sender: (message: any) => void) {
+  constructor(protected readonly name = '', protected readonly sender: (message: any) => void) {
     this._openedDefer = defer<void>();
     this._closedDefer = defer<void>();
     this.port1 = uniqId();
@@ -126,7 +121,11 @@ export class ConnectSession {
     Promise.resolve().then(() => {
       this.sender(mContent);
     });
-    return message;
+    return mContent;
+  }
+
+  public attachMessageResponse(message: IMessageBaseData, validate: (message: any) => boolean) {
+
   }
 
   /**
