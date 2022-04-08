@@ -73,7 +73,7 @@ export class Slave extends BasicServer {
     session.sendMessage({
       fromId: response.id,
       data: sendHandshakeResponseMessage(response.data),
-      type: EMessageType.HANDSHAKE,
+      type: EMessageType.RESPONSE,
     });
   }
 

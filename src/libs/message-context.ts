@@ -24,8 +24,6 @@ export const WILL_CONNECT = 'client:will:connect';
 export const WILL_DISCOUNT = 'client:will:disconnect';
 
 export class MessageContext extends Event {
-  protected pendingMap: Map<string, IPromiseDefer<any>>;
-
   protected session: Map<string, ConnectSession>;
 
   protected isReady = false;
@@ -34,7 +32,6 @@ export class MessageContext extends Event {
 
   constructor(protected readonly option: IMessageConfig) {
     super();
-    this.pendingMap = new Map();
     this.session = new Map<string, ConnectSession>();
     this.t = option.transformMessage || ((m: any) => m);
   }
@@ -101,6 +98,8 @@ export class MessageContext extends Event {
    */
   private handMessage = (originMessage: any) => {
     const message = this.t(originMessage);
+    if (window.parent === window) {
+    }
     if (messageHelper(message)) {
       // 连接类消息
       const { channel, id = '', data, type } = message;
@@ -136,12 +135,8 @@ export class MessageContext extends Event {
         }
         case EMessageType.RESPONSE_EXCEPTION:
         case EMessageType.RESPONSE: {
-          const data = message as IMessageResponseData;
-          const pendingMap = this.pendingMap;
-          const key = `${channel}-${id}`;
-          if (pendingMap.has(key)) {
-            const df = pendingMap.get(key)!;
-            data.type === EMessageType.RESPONSE_EXCEPTION ? df.reject(new Error(data.data)) : df.resolve(data.data);
+          if (session) {
+            session.receiveMessage(message);
           }
           break;
         }

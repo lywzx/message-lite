@@ -7,13 +7,19 @@ export const master = new Master({
     };
   },
   listenMessage(fn) {
-    window.addEventListener('message', fn, false);
+    window.addEventListener(
+      'message',
+      (...args) => {
+        console.log('1111111-master', args[0], args[0].data);
+        fn(...args);
+      },
+      false
+    );
   },
   unListenMessage(fn) {
     window.removeEventListener('message', fn, false);
   },
   transformMessage(event: MessageEvent) {
-    console.log('1111111', event);
     return event.data;
   },
 });

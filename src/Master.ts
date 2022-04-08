@@ -1,8 +1,13 @@
-import { EMessageType, IMasterServerConfig, IMessageHandshakeData } from './interfaces';
+import { EMessageType, IMasterServerConfig, IMessageBaseData, IMessageHandshakeData } from './interfaces';
 import { Class } from './types';
 import { BasicServer, ConnectSession, MessageContext, WILL_CONNECT, WILL_DISCOUNT } from './libs';
 import { parsePort } from './util/session-port';
-import { EHandshakeMessageType, parseHandshakeMessage, sendHandshakeResponseMessage } from './util';
+import {
+  checkReceiveIsMatchInitMessage,
+  EHandshakeMessageType,
+  parseHandshakeMessage,
+  sendHandshakeResponseMessage
+} from './util';
 
 export interface IOpeningOption {
   clientId: string;
@@ -22,7 +27,7 @@ export class Master extends BasicServer {
     throw new Error('api not available!');
   }
 
-  protected whenNewClientConnected = (message: any) => {
+  protected whenNewClientConnected = async (message: any) => {
     const { option, messageContext } = this;
     const connectMessage = (
       option.transformMessage ? option.transformMessage(message) : message
@@ -36,23 +41,30 @@ export class Master extends BasicServer {
     const handshakeResponseMessage = sendHandshakeResponseMessage(data);
     const handshakeResponseMessageObj = parseHandshakeMessage(handshakeResponseMessage);
     const session = new ConnectSession(info.name, this.option.createMasterSender(message));
-    session.setPort2(handshakeResponseMessageObj!.offset);
+    session.setPort1(handshakeResponseMessageObj!.offset);
+    session.setPort2(info.port1);
 
     // 响应握手信息
-    session.sendMessage({
+    const sendMessage = session.sendMessage({
       type: EMessageType.HANDSHAKE,
       data: handshakeResponseMessage,
     });
 
-    // 发送响应信息
-    const response = session.sendMessageWithResponse({
-      data: sendHandshakeResponseMessage(data),
-      type: EMessageType.RESPONSE,
-    });
+    messageContext.attachSession(session);
 
-    response.catch(() => {
-      this.messageContext.detachSession(session);
-    });
+    session
+      .waitMessageResponse(sendMessage, {
+        timeout: 30000,
+        validate(message: IMessageBaseData<string>) {
+          return checkReceiveIsMatchInitMessage(handshakeResponseMessage, message.data!);
+        },
+      })
+      .then(() => {
+        session.ready();
+      })
+      .catch(() => {
+        messageContext.detachSession(session);
+      });
   };
 
   protected whenClientWillDisConnected = (message: any) => {};
