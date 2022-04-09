@@ -3,16 +3,20 @@ import { Class } from '../types';
 import { MessageContext } from './message-context';
 import { createMessageEventName, defer, getApiDeclInfo } from '../util';
 import { MBaseService } from '../service';
+import { Event } from './event';
 
 export interface IAddService<T extends MBaseService = any, U extends T = any> {
   impl: Class<U>;
   decl: Class<T>;
 }
 
-export abstract class BasicServer {
+export abstract class BasicServer extends Event {
   protected messageContext: MessageContext;
 
+  protected started = false;
+
   protected constructor(option: IMessageConfig) {
+    super();
     this.messageContext = new MessageContext(option);
   }
 

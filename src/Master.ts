@@ -70,6 +70,10 @@ export class Master extends BasicServer {
   };
 
   async start(): Promise<void> {
+    if (this.started) {
+      throw new Error('serve has been started!');
+    }
+    this.started = true;
     const messageContext = this.messageContext;
     messageContext.start();
     messageContext.on(WILL_CONNECT, this.whenNewClientConnected);

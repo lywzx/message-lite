@@ -23,8 +23,6 @@ export class Slave extends BasicServer {
     super(option);
   }
 
-  protected serviceMap = new Map<Class<any>, MBaseService>();
-
   /**
    * 主动连接Master
    */
@@ -88,11 +86,6 @@ export class Slave extends BasicServer {
    * @param serv
    */
   getService<T extends MBaseService>(serv: Class<T>): T | undefined {
-    if (this.serviceMap.has(serv)) {
-      return this.serviceMap.get(serv)! as T;
-    }
-    const service = this.session.getService(serv);
-    this.serviceMap.set(serv, service);
-    return service;
+    return this.session.getService(serv);
   }
 }

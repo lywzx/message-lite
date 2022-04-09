@@ -5,3 +5,4 @@ export * from './decorator';
 export * from './Master';
 export * from './Slave';
 export * from './service';
+export * from './enum/event-name';

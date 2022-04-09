@@ -80,6 +80,12 @@ export class ConnectSession {
    */
   protected messageContext: MessageContext;
 
+  /**
+   * session map
+   * @protected
+   */
+  protected serviceMap = new Map<Class<any>, MBaseService>();
+
   constructor(protected readonly name = '', protected readonly sender: (message: any) => void) {
     this._openedDefer = defer<void>();
     this._closedDefer = defer<void>();
@@ -201,7 +207,12 @@ export class ConnectSession {
   /**
    * 获取某个服务
    */
-  getService<T extends MBaseService>(serv: Class<T>) {
-    return createSlaveService(this.messageContext, this, serv);
+  getService<T extends MBaseService>(serv: Class<T>): T {
+    if (this.serviceMap.has(serv)) {
+      return this.serviceMap.get(serv)! as T;
+    }
+    const service = createSlaveService(this.messageContext, this, serv);
+    this.serviceMap.set(serv, service);
+    return service;
   }
 }
