@@ -1,4 +1,5 @@
 import { Master } from 'message-lite';
+import { ALL_SERVICE } from '../core/impl';
 
 export const master = new Master({
   createMasterSender(event: MessageEvent) {
@@ -23,5 +24,4 @@ export const master = new Master({
     return event.data;
   },
 });
-
-master.start();
+master.addService(ALL_SERVICE).start();

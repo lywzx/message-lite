@@ -1,16 +1,8 @@
-import { EMessageType, IMessageCallData, IMessageEvent, IMessageResponseData, IMessageConfig } from '../interfaces';
+import { EMessageType, IMessageCallData, IMessageEvent, IMessageConfig } from '../interfaces';
 import { Class } from '../types';
-import {
-  getApiDeclInfo,
-  defer,
-  IPromiseDefer,
-  messageHelper,
-  createMessageEventName,
-  isHandshakeMessage,
-} from '../util';
+import { getApiDeclInfo, defer, messageHelper, createMessageEventName } from '../util';
 import { Event } from './event';
 import { ConnectSession } from './connect-session';
-import { CONST_SERVICE_NAME } from '../connect/connect.service';
 import { MBaseService } from '../service';
 
 /**
@@ -98,11 +90,10 @@ export class MessageContext extends Event {
    */
   private handMessage = (originMessage: any) => {
     const message = this.t(originMessage);
-    if (window.parent === window) {
-    }
+
     if (messageHelper(message)) {
       // 连接类消息
-      const { channel, id = '', data, type } = message;
+      const { channel, type } = message;
       const session = this.session.get(channel);
       /*if (!session) {
         if (type === EMessageType.CALL && (message as IMessageCallData).service === CONST_SERVICE_NAME) {
@@ -129,8 +120,10 @@ export class MessageContext extends Event {
         case EMessageType.EVENT_OFF:
         case EMessageType.EVENT:
         case EMessageType.CALL: {
-          const eventName = createMessageEventName(message as IMessageEvent | IMessageCallData);
-          this.emit(eventName, data, session);
+          if (session && session.isReady) {
+            const eventName = createMessageEventName(message as IMessageEvent | IMessageCallData);
+            this.emit(eventName, message, session);
+          }
           break;
         }
         case EMessageType.RESPONSE_EXCEPTION:

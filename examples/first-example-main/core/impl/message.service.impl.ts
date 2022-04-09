@@ -45,7 +45,7 @@ export class MessageServiceImpl extends MessageService {
   info(content: ImessageServiceType, context?: any): Promise<void> {
     if (context) {
       // tslint:disable-next-line:no-console
-      console.log('RPC执行上下文', context.extData.info.id, context);
+      console.log('RPC执行上下文', context.extData, context);
     }
     return showAntdMessage(content, 'info');
   }

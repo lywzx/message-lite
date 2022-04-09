@@ -35,7 +35,10 @@ export class ConnectSession {
     return this._closedDefer.promise;
   }
 
-  protected isReady = false;
+  /**
+   * 当前session是否处理ready状态
+   */
+  public isReady = false;
 
   /**
    * 建立连接时的defer对象

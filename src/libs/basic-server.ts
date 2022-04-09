@@ -1,7 +1,7 @@
 import { EMessageType, IMessageCallData, IMessageConfig } from '../interfaces';
 import { Class } from '../types';
 import { MessageContext } from './message-context';
-import { defer, getApiDeclInfo } from '../util';
+import { createMessageEventName, defer, getApiDeclInfo } from '../util';
 import { MBaseService } from '../service';
 
 export interface IAddService<T extends MBaseService = any, U extends T = any> {
@@ -12,7 +12,7 @@ export interface IAddService<T extends MBaseService = any, U extends T = any> {
 export abstract class BasicServer {
   protected messageContext: MessageContext;
 
-  constructor(option: IMessageConfig) {
+  protected constructor(option: IMessageConfig) {
     this.messageContext = new MessageContext(option);
   }
 
@@ -31,31 +31,35 @@ export abstract class BasicServer {
       const info = getApiDeclInfo(decl);
       const apiInstance = new impl();
       info.apis.forEach((api) => {
-        messageContext.on(
-          `${info.name}:${api.method}:call`,
-          async (data: IMessageCallData, option: { timeout?: number }) => {
-            const session = messageContext.getSession(data.channel)!;
+        const eventName = createMessageEventName({
+          type: EMessageType.CALL,
+          service: info.name,
+          method: api.method,
+        });
+        messageContext.on(eventName, async (data: IMessageCallData, option: { timeout?: number }) => {
+          const session = messageContext.getSession(data.channel)!;
 
-            try {
-              const df = defer(option?.timeout);
-              const result = await Promise.race([apiInstance[api.method](data.data, session), df.promise]);
+          try {
+            const df = defer(option?.timeout);
+            const result = await Promise.race([apiInstance[api.method](data.data, session), df.promise]);
 
-              session.sendMessage({
-                id: data.id,
-                type: EMessageType.RESPONSE,
-                data: result,
-              });
-            } catch (e) {
-              const err = e as Error;
-              session.sendMessage({
-                id: data.id,
-                type: EMessageType.RESPONSE_EXCEPTION,
-                data: err.stack || err.message,
-              });
-            }
+            session.sendMessage({
+              fromId: data.id,
+              id: data.id,
+              type: EMessageType.RESPONSE,
+              data: result,
+            });
+          } catch (e) {
+            const err = e as Error;
+            session.sendMessage({
+              id: data.id,
+              type: EMessageType.RESPONSE_EXCEPTION,
+              data: err.stack || err.message,
+            });
           }
-        );
+        });
       });
     });
+    return this;
   }
 }

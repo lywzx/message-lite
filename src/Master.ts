@@ -1,12 +1,12 @@
 import { EMessageType, IMasterServerConfig, IMessageBaseData, IMessageHandshakeData } from './interfaces';
 import { Class } from './types';
-import { BasicServer, ConnectSession, MessageContext, WILL_CONNECT, WILL_DISCOUNT } from './libs';
+import { BasicServer, ConnectSession, WILL_CONNECT, WILL_DISCOUNT } from './libs';
 import { parsePort } from './util/session-port';
 import {
   checkReceiveIsMatchInitMessage,
   EHandshakeMessageType,
   parseHandshakeMessage,
-  sendHandshakeResponseMessage
+  sendHandshakeResponseMessage,
 } from './util';
 
 export interface IOpeningOption {
@@ -15,14 +15,11 @@ export interface IOpeningOption {
 }
 
 export class Master extends BasicServer {
-  protected sessionMap = new Map<string, ConnectSession>();
-
-  protected clientIndex = 1000;
-
   constructor(protected readonly option: IMasterServerConfig) {
     super(option);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getService<T>(serv: Class<T>): T | undefined {
     throw new Error('api not available!');
   }
@@ -32,7 +29,7 @@ export class Master extends BasicServer {
     const connectMessage = (
       option.transformMessage ? option.transformMessage(message) : message
     ) as IMessageHandshakeData;
-    const { id, channel, data } = connectMessage;
+    const { channel, data } = connectMessage;
     const parsedHandshake = parseHandshakeMessage(data);
     if (!parsedHandshake || parsedHandshake.type !== EHandshakeMessageType.INIT) {
       return;
@@ -67,14 +64,16 @@ export class Master extends BasicServer {
       });
   };
 
-  protected whenClientWillDisConnected = (message: any) => {};
+  protected whenClientWillDisConnected = (message: any) => {
+    //
+    message = 1;
+  };
 
   async start(): Promise<void> {
-    const messageContext = new MessageContext(this.option);
+    const messageContext = this.messageContext;
     messageContext.start();
     messageContext.on(WILL_CONNECT, this.whenNewClientConnected);
     messageContext.on(WILL_DISCOUNT, this.whenClientWillDisConnected);
-    this.messageContext = messageContext;
   }
 
   async stop(): Promise<void> {
