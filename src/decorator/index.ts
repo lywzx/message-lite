@@ -38,10 +38,9 @@ export function ApiDeclApi(option: Omit<IApiDeclFullApi, 'method'> = {}) {
   ) {
     InnerApiDeclMethodOrEvent(
       target.constructor,
-      {
-        ...option,
+      Object.assign({}, option, {
         method: propertyKey as string,
-      },
+      }),
       'method'
     );
     return descriptor;
@@ -55,10 +54,9 @@ export function ApiDeclEvent(option: Omit<IApiDeclFullApiEvent, 'name'> = {}) {
   return function declObservable<T extends MBaseService>(target: Class<T>['prototype'], propertyKey: string | symbol) {
     apiDeclMethodOrEvent(
       target.constructor,
-      {
-        ...option,
+      Object.assign({}, option, {
         name: propertyKey as string,
-      },
+      }),
       'event'
     );
   };

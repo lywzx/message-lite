@@ -1,5 +1,3 @@
-import { parseInt } from 'lodash';
-
 const PORT_CONNECTOR = '➜';
 
 /**
@@ -20,7 +18,7 @@ export function parsePort(port: string): { name: string; port1: number; port2: n
   const arr = port.split(PORT_CONNECTOR);
   return {
     name: arr[0] || '',
-    port1: parseInt(arr[1]),
-    port2: parseInt(arr[2]),
+    port1: parseInt(arr[1], 10),
+    port2: parseInt(arr[2], 10),
   };
 }

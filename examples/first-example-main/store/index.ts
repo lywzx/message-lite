@@ -32,7 +32,7 @@ function useAppStore(
   const updateAppReady = (id: string) => {
     const idx = appState.list.findIndex((app) => app.id === id);
     if (idx > -1) {
-      const list = [...appState.list];
+      const list = appState.list.slice();
       const currentApp = list[idx];
       list.splice(idx, 1, {
         ...currentApp,
@@ -47,4 +47,4 @@ function useAppStore(
   return { appState, addNewApp, removeApp, updateAppReady };
 }
 
-export const Counter = createContainer(useAppStore);
+export const AppStore = createContainer(useAppStore);
