@@ -8,7 +8,7 @@ import {
   parseHandshakeMessage,
   sendHandshakeResponseMessage,
 } from './util';
-import { EventName } from './enum/event-name';
+import { CONNECTED, CONNECTED_FAILED } from './constant';
 
 export class Master extends BasicServer {
   constructor(protected readonly option: IMasterServerConfig) {
@@ -54,11 +54,11 @@ export class Master extends BasicServer {
       })
       .then(() => {
         session.ready();
-        this.emit(EventName.CONNECTED, session);
+        this.emit(CONNECTED, session);
       })
       .catch(() => {
         messageContext.detachSession(session);
-        this.emit(EventName.CONNECTED_FAILED, session);
+        this.emit(CONNECTED_FAILED, session);
       });
   };
 

@@ -7,11 +7,10 @@ import { slave } from '../slave';
 export function App() {
   const showMessage = async () => {
     const message = slave.getService(MessageService);
-    const label = '11111111111';
-    console.time(label);
-    debugger;
-    await message!.info('点击弹出成功！');
-    console.timeEnd(label);
+    await message!.info({
+      duration: 6000,
+      content: '点击弹出成功！',
+    });
   };
 
   const showMessage2 = async () => {

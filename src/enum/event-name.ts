@@ -1,6 +1,6 @@
 export enum EventName {
   /**
-   * 当有客户端准备连接时触发
+   *
    */
   PRE_CONNECT = 'pre_connect',
 

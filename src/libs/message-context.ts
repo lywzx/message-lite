@@ -1,9 +1,7 @@
 import { EMessageType, IMessageCallData, IMessageEvent, IMessageConfig } from '../interfaces';
-import { Class } from '../types';
-import { getApiDeclInfo, defer, messageHelper, createMessageEventName } from '../util';
+import { messageHelper, createMessageEventName } from '../util';
 import { Event } from './event';
 import { ConnectSession } from './connect-session';
-import { MBaseService } from '../service';
 
 /**
  * some client try connect
@@ -33,11 +31,8 @@ export class MessageContext extends Event {
     if (this.isReady) {
       throw new Error('message has ready!');
     }
-    this.option.listenMessage(this.handMessage);
-  }
-
-  public readied() {
     this.isReady = true;
+    this.option.listenMessage(this.handMessage);
   }
 
   public attachSession(session: ConnectSession) {
@@ -58,30 +53,6 @@ export class MessageContext extends Event {
     super.dispose();
     this.isReady = false;
     this.option.unListenMessage(this.handMessage);
-  }
-
-  public whenServiceCalled<T extends MBaseService>(
-    serv: Class<T>,
-    option: {
-      method: string;
-      once?: boolean;
-      timeout?: number;
-    }
-  ) {
-    const servInfo = getApiDeclInfo(serv);
-    const df = defer<any>(option.timeout);
-
-    const fn = (data: any) => {
-      df.resolve(data);
-    };
-    const eventName = `${servInfo.name}:${option.method}:call`;
-    this.once(eventName, fn);
-
-    df.promise.finally(() => {
-      this.off(eventName, fn);
-    });
-
-    return df.promise;
   }
 
   /**
