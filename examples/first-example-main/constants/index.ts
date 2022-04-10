@@ -11,15 +11,16 @@ export const ALL_APP_INFOS = [
   },
   {
     id: CHILD_SECOND_APP_ID,
-    version: '1.0.1',
     url: '/first-example-child-2',
-    options: {},
   },
   {
     id: EXAMPLE_ASYNC_APP_ID,
-    version: '1.0.1',
     url: '',
     html: '/example-async-app',
-    options: {},
   },
-];
+].map((it) => {
+  return {
+    ...it,
+    url: `${it.url}?id=${it.id}`,
+  };
+});

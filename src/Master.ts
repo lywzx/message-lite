@@ -8,11 +8,7 @@ import {
   parseHandshakeMessage,
   sendHandshakeResponseMessage,
 } from './util';
-
-export interface IOpeningOption {
-  clientId: string;
-  timeout?: number;
-}
+import { EventName } from './enum/event-name';
 
 export class Master extends BasicServer {
   constructor(protected readonly option: IMasterServerConfig) {
@@ -58,9 +54,11 @@ export class Master extends BasicServer {
       })
       .then(() => {
         session.ready();
+        this.emit(EventName.CONNECTED, session);
       })
       .catch(() => {
         messageContext.detachSession(session);
+        this.emit(EventName.CONNECTED_FAILED, session);
       });
   };
 

@@ -17,6 +17,7 @@ export interface IConnectOption {
 
 export class Slave extends BasicServer {
   protected isConnecting = false;
+
   protected session!: ConnectSession;
 
   constructor(protected readonly option: ISlaveClientConfig) {

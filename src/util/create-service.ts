@@ -34,7 +34,7 @@ export function createSlaveService<T extends MBaseService>(
       if (option.notify) {
         return Promise.resolve();
       } else {
-        return messageContext.waitMessageResponse(message, {
+        return session.waitMessageResponse(message, {
           timeout: option.timeout || 30000,
         });
       }

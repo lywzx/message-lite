@@ -141,6 +141,9 @@ export class ConnectSession {
     this.port2 = port;
   }
 
+  public getName() {
+    return this.name;
+  }
   /**
    * send message
    * @param message

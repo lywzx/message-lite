@@ -1,10 +1,10 @@
-import { Button, Card, Modal } from 'antd';
-import React, { memo, useEffect, useRef } from 'react';
-import { ISappInState } from '../app';
+import { Button, Card } from 'antd';
+import React, { memo, useRef } from 'react';
 import './index.less';
+import { IAppInfo } from '../../store';
 
 export interface ISappContainerProps {
-  app: ISappInState;
+  app: IAppInfo;
 }
 
 export function SappContainer(props: ISappContainerProps) {
@@ -13,7 +13,7 @@ export function SappContainer(props: ISappContainerProps) {
   const title = (
     <div>
       小程序
-      <Button size={'small'} className="fr">
+      <Button size={'small'} className="fr" disabled={!props.app.isReady}>
         退出
       </Button>
     </div>
@@ -27,7 +27,7 @@ export function SappContainer(props: ISappContainerProps) {
       bodyStyle={{ flex: 1 }}
     >
       <div className="sapp-container" ref={ref}>
-        <iframe className="sapp-frame" src="/first-example-child-1" frameBorder="0" />
+        <iframe className="sapp-frame" src={props.app.url} frameBorder="0" />
       </div>
     </Card>
   );

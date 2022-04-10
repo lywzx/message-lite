@@ -19,29 +19,36 @@ function useAppStore(
   const [appState, setAppState] = useState(initialState);
 
   const addNewApp = (app: IAppInfo) =>
-    setAppState({
-      list: [...appState.list, app],
+    setAppState((appState) => {
+      return {
+        list: [...appState.list, app],
+      };
     });
 
   const removeApp = (id: string) => {
-    setAppState({
-      list: appState.list.filter((app) => app.id !== id),
+    setAppState((appState) => {
+      return {
+        list: appState.list.filter((app) => app.id !== id),
+      };
     });
   };
 
   const updateAppReady = (id: string) => {
-    const idx = appState.list.findIndex((app) => app.id === id);
-    if (idx > -1) {
-      const list = appState.list.slice();
-      const currentApp = list[idx];
-      list.splice(idx, 1, {
-        ...currentApp,
-        isReady: true,
-      });
-      setAppState({
-        list,
-      });
-    }
+    setAppState((appState) => {
+      const idx = appState.list.findIndex((app) => app.id === id);
+      if (idx > -1) {
+        const list = appState.list.slice();
+        const currentApp = list[idx];
+        list.splice(idx, 1, {
+          ...currentApp,
+          isReady: true,
+        });
+        return {
+          list,
+        };
+      }
+      return appState;
+    });
   };
 
   return { appState, addNewApp, removeApp, updateAppReady };

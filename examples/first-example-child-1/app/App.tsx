@@ -1,21 +1,26 @@
 import { Message2Service, MessageService } from '@example/first-example-decl';
-import { Button, Row } from 'antd';
+import Button from 'antd/lib/button';
+import Row from 'antd/lib/row';
 import React from 'react';
 import { slave } from '../slave';
 
 export function App() {
   const showMessage = async () => {
-    const message = await slave.getService(MessageService);
+    const message = slave.getService(MessageService);
+    const label = '11111111111';
+    console.time(label);
+    debugger;
     await message!.info('点击弹出成功！');
+    console.timeEnd(label);
   };
 
   const showMessage2 = async () => {
-    const message = await slave.getService(Message2Service);
+    const message = slave.getService(Message2Service);
     await message!.info('点击弹出成功！');
   };
 
   const showMessage3 = async () => {
-    const message = await slave.getService(Message2Service);
+    const message = slave.getService(Message2Service);
     await message!.info2('点击弹出成功！');
   };
 

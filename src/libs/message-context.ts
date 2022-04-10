@@ -140,12 +140,6 @@ export class MessageContext extends Event {
   public getSession(channel: string) {
     return this.session.get(channel);
   }
-
-  public async waitMessageResponse(message: IMessageCallData, option: { timeout: number }) {
-    const df = defer<any>(option.timeout);
-
-    return df.promise;
-  }
 }
 
 export interface IMessageContextSendMessage<T = any> {
