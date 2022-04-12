@@ -8,7 +8,8 @@ export function App() {
   const showMessage = async () => {
     const message = slave.getService(MessageService);
     await message!.info({
-      duration: 6000,
+      waitingClose: true,
+      duration: 6,
       content: '点击弹出成功！',
     });
   };

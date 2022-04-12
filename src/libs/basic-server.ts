@@ -47,19 +47,25 @@ export abstract class BasicServer extends Event {
             const df = defer(option?.timeout);
             const result = await Promise.race([apiInstance[api.method](data.data, session), df.promise]);
 
-            session.sendMessage({
-              fromId: data.id,
-              id: data.id,
-              type: EMessageType.RESPONSE,
-              data: result,
-            });
+            if (!api.notify) {
+              session.sendMessage({
+                fromId: data.id,
+                id: data.id,
+                type: EMessageType.RESPONSE,
+                data: result,
+              });
+            }
           } catch (e) {
-            const err = e as Error;
-            session.sendMessage({
-              id: data.id,
-              type: EMessageType.RESPONSE_EXCEPTION,
-              data: err.stack || err.message,
-            });
+            if (!api.notify) {
+              const err = e as Error;
+              session.sendMessage({
+                id: data.id,
+                type: EMessageType.RESPONSE_EXCEPTION,
+                data: err.stack || err.message,
+              });
+            } else {
+              throw e;
+            }
           }
         });
       });
