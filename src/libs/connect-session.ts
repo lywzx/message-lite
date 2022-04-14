@@ -1,6 +1,6 @@
 import { createSlaveService, defer, IPromiseDefer } from '../util';
 import { Class } from '../types';
-import { EMessageType, IMessageBaseData } from '../interfaces';
+import { EMessageType, IMessageBaseData, IConnectSession } from '../interfaces';
 import { MessageContext } from './message-context';
 import { MBaseService } from '../service';
 import { uniqId } from '../util/random';
@@ -20,7 +20,12 @@ export interface IConnectSessionWaitResponseOption {
   validate?: (value: any) => boolean;
 }
 
-export class ConnectSession {
+export abstract class ConnectSession implements IConnectSession {
+  /**
+   * 断开连接
+   */
+  abstract disconnect(): Promise<void>;
+
   /**
    * wait session opened
    */

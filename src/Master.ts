@@ -1,6 +1,6 @@
 import { EMessageType, IMasterServerConfig, IMessageBaseData, IMessageHandshakeData } from './interfaces';
 import { Class } from './types';
-import { BasicServer, ConnectSession, WILL_CONNECT, WILL_DISCOUNT } from './libs';
+import { BasicServer, ConnectSession, WILL_CONNECT, WILL_DISCOUNT, MasterClient } from './libs';
 import { parsePort } from './util/session-port';
 import {
   checkReceiveIsMatchInitMessage,
@@ -33,7 +33,7 @@ export class Master extends BasicServer {
     const info = parsePort(channel);
     const handshakeResponseMessage = sendHandshakeResponseMessage(data);
     const handshakeResponseMessageObj = parseHandshakeMessage(handshakeResponseMessage);
-    const session = new ConnectSession(info.name, this.option.createMasterSender(message));
+    const session = new MasterClient(info.name, this.option.createMasterSender(message));
     session.setPort1(handshakeResponseMessageObj!.offset);
     session.setPort2(info.port1);
 
@@ -79,6 +79,7 @@ export class Master extends BasicServer {
   }
 
   async stop(): Promise<void> {
+    this.started = false;
     this.messageContext.dispose();
   }
   /**
@@ -105,5 +106,18 @@ export class Master extends BasicServer {
    */
   async close(): Promise<void> {
     this.messageContext.dispose();
+  }
+
+  public getSession(name?: string): Array<ConnectSession> {
+    if (!this.started) {
+      throw new Error('app not started');
+    }
+    const sessions = Array.from(this.messageContext.getSession()).map(([channel, session]) => session);
+
+    if (name) {
+      return sessions.filter((s) => s.getName() === name);
+    }
+
+    return sessions;
   }
 }

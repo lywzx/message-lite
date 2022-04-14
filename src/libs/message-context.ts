@@ -108,8 +108,13 @@ export class MessageContext extends Event {
     }
   };
 
-  public getSession(channel: string) {
-    return this.session.get(channel);
+  public getSession(): Map<string, ConnectSession>;
+  public getSession(channel: string): ConnectSession | undefined;
+  public getSession(channel?: string): Map<string, ConnectSession> | ConnectSession | undefined {
+    if (channel) {
+      return this.session.get(channel);
+    }
+    return this.session as Map<string, ConnectSession>;
   }
 }
 

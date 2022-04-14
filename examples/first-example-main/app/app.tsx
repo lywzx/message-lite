@@ -4,8 +4,7 @@ import { AppStore } from '../store';
 import { LeftNav } from './left-nav';
 import { AppRoot } from './app-root';
 import { master } from '../master';
-import { ConnectSession } from 'message-lite';
-import { CONNECTED, CONNECTED_FAILED } from 'message-lite';
+import { ConnectSession, CONNECTED, CONNECTED_FAILED } from 'message-lite';
 
 function AppLayout() {
   const { updateAppReady, removeApp } = AppStore.useContainer();

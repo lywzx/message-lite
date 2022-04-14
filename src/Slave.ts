@@ -6,7 +6,7 @@ import {
   sendHandshakeResponseMessage,
   sendInitMessage,
 } from './util';
-import { BasicServer, ConnectSession, WILL_CONNECT } from './libs';
+import { BasicServer, ConnectSession, WILL_CONNECT, SlaveClient } from './libs';
 import { EMessageType, IMessageBaseData, ISlaveClientConfig } from './interfaces';
 import { MBaseService } from './service';
 
@@ -27,11 +27,12 @@ export class Slave extends BasicServer {
   /**
    * 主动连接Master
    */
-  async connect(option: IConnectOption): Promise<void> {
+  async connect(option: IConnectOption = {}): Promise<void> {
     if (this.isConnecting) {
       throw new Error('client is connecting server, please not call twice!');
     }
-    const session = (this.session = new ConnectSession(option.name, this.option.sendMessage));
+    this.isConnecting = true;
+    const session = (this.session = new SlaveClient(option.name, this.option.sendMessage));
     const { messageContext, option: slaveOption } = this;
     const initMessage = sendInitMessage();
 
@@ -44,36 +45,41 @@ export class Slave extends BasicServer {
     let waitConnect = (message: any) => {
       // nowork
     };
-    // 等待消息响应
-    const response = (await Promise.race([
-      new Promise((resolve) => {
-        waitConnect = (message: any) => {
-          const msg = (
-            slaveOption.transformMessage ? slaveOption.transformMessage(message) : message
-          ) as IMessageBaseData;
-          const res = msg?.data || '';
-          if (checkReceiveIsMatchInitMessage(initMessage, res)) {
-            resolve(msg);
-          }
-        };
-        messageContext.on(WILL_CONNECT, waitConnect);
-      }),
-      defer(option.timeout).promise,
-    ]).finally(() => {
-      messageContext.off(WILL_CONNECT, waitConnect);
-    })) as IMessageBaseData;
-    const handshake = response.data;
-    const handshakeMessage = parseHandshakeMessage(handshake)!;
+    try {
+      // 等待消息响应
+      const response = (await Promise.race([
+        new Promise((resolve) => {
+          waitConnect = (message: any) => {
+            const msg = (
+              slaveOption.transformMessage ? slaveOption.transformMessage(message) : message
+            ) as IMessageBaseData;
+            const res = msg?.data || '';
+            if (checkReceiveIsMatchInitMessage(initMessage, res)) {
+              resolve(msg);
+            }
+          };
+          messageContext.on(WILL_CONNECT, waitConnect);
+        }),
+        defer(option.timeout).promise,
+      ]).finally(() => {
+        messageContext.off(WILL_CONNECT, waitConnect);
+      })) as IMessageBaseData;
+      const handshake = response.data;
+      const handshakeMessage = parseHandshakeMessage(handshake)!;
 
-    session.setPort2(handshakeMessage.offset);
-    messageContext.attachSession(session);
+      session.setPort2(handshakeMessage.offset);
+      messageContext.attachSession(session);
 
-    // 再发送一条信息给到serve，以表示客户端准备好了
-    session.sendMessage({
-      fromId: response.id,
-      data: sendHandshakeResponseMessage(response.data),
-      type: EMessageType.RESPONSE,
-    });
+      // 再发送一条信息给到serve，以表示客户端准备好了
+      session.sendMessage({
+        fromId: response.id,
+        data: sendHandshakeResponseMessage(response.data),
+        type: EMessageType.RESPONSE,
+      });
+    } catch (e) {
+      this.isConnecting = false;
+      throw e;
+    }
   }
 
   /**
