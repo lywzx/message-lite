@@ -1,7 +1,6 @@
-import { ConnectSession, MessageContext, ServiceEventer } from '../libs';
 import { Class } from '../types';
 import { getApiDeclInfo, IApiDeclFullApi } from './api-decl';
-import { EMessageType, IMessageCallData } from '../interfaces';
+import { EMessageType, IConnectSession, IEventer, IMessageCallData, IMessageContext } from '../interfaces';
 import { MBaseService } from '../service';
 
 /**
@@ -9,11 +8,13 @@ import { MBaseService } from '../service';
  * @param messageContext
  * @param session
  * @param serv
+ * @param eventer
  */
 export function createSlaveService<T extends MBaseService>(
-  messageContext: MessageContext,
-  session: ConnectSession,
-  serv: Class<T>
+  messageContext: IMessageContext,
+  session: IConnectSession,
+  serv: Class<T>,
+  eventer: Class<IEventer>
 ) {
   const s = new serv();
   const impl = getApiDeclInfo(serv);
@@ -42,8 +43,7 @@ export function createSlaveService<T extends MBaseService>(
   });
   // 处理所有的事件
   impl.events.forEach((evt) => {
-    const eventer = new ServiceEventer(`${impl.name}:${evt.name}`);
-    (s as any)[evt.name] = eventer;
+    (s as any)[evt.name] = new eventer(`${impl.name}:${evt.name}`);
   });
   return s;
 }

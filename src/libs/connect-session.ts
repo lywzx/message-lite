@@ -1,24 +1,18 @@
 import { createSlaveService, defer, IPromiseDefer } from '../util';
 import { Class } from '../types';
-import { EMessageType, IMessageBaseData, IConnectSession } from '../interfaces';
-import { MessageContext } from './message-context';
+import {
+  EMessageType,
+  IMessageBaseData,
+  IConnectSession,
+  ISessionSendMessage,
+  IConnectSessionWaitResponseOption,
+  IMessageContext,
+} from '../interfaces';
 import { MBaseService } from '../service';
 import { uniqId } from '../util/random';
 import { createPort } from '../util/session-port';
 import { Event } from './event';
-
-export interface ISessionSendMessage extends Omit<IMessageBaseData, 'id' | 'channel'> {
-  fromId?: number;
-  id?: number;
-}
-
-/**
- * 响应
- */
-export interface IConnectSessionWaitResponseOption {
-  timeout?: number;
-  validate?: (value: any) => boolean;
-}
+import { ServiceEventer } from './service-eventer';
 
 export abstract class ConnectSession implements IConnectSession {
   /**
@@ -60,12 +54,12 @@ export abstract class ConnectSession implements IConnectSession {
    * self port
    * @protected
    */
-  protected port1 = 0;
+  public port1 = 0;
   /**
    * remote port
    * @protected
    */
-  protected port2 = -1;
+  public port2 = -1;
 
   /**
    * 内部消息中转
@@ -83,7 +77,7 @@ export abstract class ConnectSession implements IConnectSession {
    * message context
    * @protected
    */
-  protected messageContext: MessageContext;
+  protected messageContext: IMessageContext;
 
   /**
    * session map
@@ -98,7 +92,7 @@ export abstract class ConnectSession implements IConnectSession {
     this.eventer = new Event();
   }
 
-  public ready() {
+  public async ready() {
     this.isReady = true;
     this._openedDefer.resolve();
   }
@@ -111,7 +105,7 @@ export abstract class ConnectSession implements IConnectSession {
    * attach message context
    * @param messageContext
    */
-  public attachMessageContext(messageContext: MessageContext) {
+  public attachMessageContext(messageContext: IMessageContext) {
     this.messageContext = messageContext;
   }
 
@@ -219,7 +213,7 @@ export abstract class ConnectSession implements IConnectSession {
     if (this.serviceMap.has(serv)) {
       return this.serviceMap.get(serv)! as T;
     }
-    const service = createSlaveService(this.messageContext, this, serv);
+    const service = createSlaveService(this.messageContext, this, serv, ServiceEventer);
     this.serviceMap.set(serv, service);
     return service;
   }

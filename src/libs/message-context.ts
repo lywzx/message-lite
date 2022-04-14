@@ -1,7 +1,13 @@
-import { EMessageType, IMessageCallData, IMessageEvent, IMessageConfig } from '../interfaces';
+import {
+  EMessageType,
+  IMessageCallData,
+  IMessageEvent,
+  IMessageConfig,
+  IConnectSession,
+  IMessageContext,
+} from '../interfaces';
 import { messageHelper, createMessageEventName } from '../util';
 import { Event } from './event';
-import { ConnectSession } from './connect-session';
 
 /**
  * some client try connect
@@ -13,8 +19,8 @@ export const WILL_CONNECT = 'client:will:connect';
  */
 export const WILL_DISCOUNT = 'client:will:disconnect';
 
-export class MessageContext extends Event {
-  protected session: Map<string, ConnectSession>;
+export class MessageContext extends Event implements IMessageContext {
+  protected session: Map<string, IConnectSession>;
 
   protected isReady = false;
 
@@ -22,7 +28,7 @@ export class MessageContext extends Event {
 
   constructor(protected readonly option: IMessageConfig) {
     super();
-    this.session = new Map<string, ConnectSession>();
+    this.session = new Map<string, IConnectSession>();
     this.t = option.transformMessage || ((m: any) => m);
   }
 
@@ -35,12 +41,12 @@ export class MessageContext extends Event {
     this.option.listenMessage(this.handMessage);
   }
 
-  public attachSession(session: ConnectSession) {
+  public attachSession(session: IConnectSession) {
     session.attachMessageContext(this);
     this.session.set(session.getReceiverPort(), session);
   }
 
-  public detachSession(session: ConnectSession | string) {
+  public detachSession(session: IConnectSession | string) {
     const key = typeof session === 'string' ? session : session.getReceiverPort();
     if (this.session.has(key)) {
       const s = this.session.get(key)!;
@@ -91,7 +97,7 @@ export class MessageContext extends Event {
         case EMessageType.EVENT_OFF:
         case EMessageType.EVENT:
         case EMessageType.CALL: {
-          if (session && session.isReady) {
+          if (session /*&& session.isReady*/) {
             const eventName = createMessageEventName(message as IMessageEvent | IMessageCallData);
             this.emit(eventName, message, session);
           }
@@ -108,28 +114,12 @@ export class MessageContext extends Event {
     }
   };
 
-  public getSession(): Map<string, ConnectSession>;
-  public getSession(channel: string): ConnectSession | undefined;
-  public getSession(channel?: string): Map<string, ConnectSession> | ConnectSession | undefined {
+  public getSession(): Map<string, IConnectSession>;
+  public getSession(channel: string): IConnectSession | undefined;
+  public getSession(channel?: string): Map<string, IConnectSession> | IConnectSession | undefined {
     if (channel) {
       return this.session.get(channel);
     }
-    return this.session as Map<string, ConnectSession>;
+    return this.session as Map<string, IConnectSession>;
   }
-}
-
-export interface IMessageContextSendMessage<T = any> {
-  /**
-   * message uniq id
-   */
-  sessionId: string;
-  /**
-   * message data content
-   */
-  data: T;
-}
-
-export interface IMessageOption {
-  notify: boolean;
-  timeout: number;
 }

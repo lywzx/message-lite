@@ -1,6 +1,12 @@
-import { EMessageType, IMasterServerConfig, IMessageBaseData, IMessageHandshakeData } from './interfaces';
+import {
+  EMessageType,
+  IConnectSession,
+  IMasterServerConfig,
+  IMessageBaseData,
+  IMessageHandshakeData,
+} from './interfaces';
 import { Class } from './types';
-import { BasicServer, ConnectSession, WILL_CONNECT, WILL_DISCOUNT, MasterClient } from './libs';
+import { BasicServer, WILL_CONNECT, WILL_DISCOUNT, MasterClient } from './libs';
 import { parsePort } from './util/session-port';
 import {
   checkReceiveIsMatchInitMessage,
@@ -108,7 +114,7 @@ export class Master extends BasicServer {
     this.messageContext.dispose();
   }
 
-  public getSession(name?: string): Array<ConnectSession> {
+  public getSession(name?: string): Array<IConnectSession> {
     if (!this.started) {
       throw new Error('app not started');
     }

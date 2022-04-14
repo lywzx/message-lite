@@ -1,4 +1,6 @@
-export class Event {
+import { IEvent } from '../interfaces';
+
+export class Event implements IEvent {
   protected eventer: Map<string, Array<(...args: any[]) => any>> = new Map();
 
   on(event: string, fn: (...args: any[]) => any) {
