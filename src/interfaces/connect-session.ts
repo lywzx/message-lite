@@ -1,5 +1,9 @@
-import { IMessageBaseData } from './message-data';
+import { IMessageBaseData, IMessageEvent } from './message-data';
 import { IMessageContext } from './message-context';
+import { MBaseService } from '../service';
+import { Class } from '../types';
+
+export type IListenOption = Pick<IMessageEvent, 'service' | 'event'>;
 
 export interface ISessionSendMessage extends Omit<IMessageBaseData, 'id' | 'channel'> {
   fromId?: number;
@@ -76,7 +80,7 @@ export interface IConnectSession {
    * 发送消息
    * @param message
    */
-  sendMessage(message: ISessionSendMessage): IMessageBaseData;
+  sendMessage<T extends ISessionSendMessage>(message: Omit<T, 'channel'>): IMessageBaseData;
 
   /**
    * 接收消息
@@ -93,4 +97,28 @@ export interface IConnectSession {
     message: ISessionSendMessage,
     option: IConnectSessionWaitResponseOption
   ): Promise<IMessageBaseData>;
+
+  /**
+   * 添加某个服务监听
+   * @param opt
+   */
+  addServiceListener(opt: IListenOption): boolean;
+
+  /**
+   * 移除某个服务监听
+   * @param opt
+   */
+  removeServiceListener(opt: IListenOption): boolean;
+
+  /**
+   * 判断是否监听了此消息
+   * @param opt
+   */
+  listened(opt: IListenOption): boolean;
+
+  /**
+   * 获取某个服务
+   * @param serv
+   */
+  getService<T extends MBaseService>(serv: Class<T>): T;
 }

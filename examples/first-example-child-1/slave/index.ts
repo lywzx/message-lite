@@ -1,4 +1,6 @@
 import { Slave } from 'message-lite';
+import { AlertService } from '@example/first-children-decl';
+import { AlertServiceImpl } from '../core/impl/alert.service.impl';
 
 export const slave = new Slave({
   sendMessage(message: any) {
@@ -20,4 +22,9 @@ export const slave = new Slave({
   transformMessage(message: MessageEvent) {
     return message.data;
   },
-});
+}).addService([
+  {
+    decl: AlertService,
+    impl: AlertServiceImpl,
+  },
+]);

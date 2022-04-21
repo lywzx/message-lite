@@ -5,17 +5,25 @@ import { fake } from 'sinon';
 
 describe('test service-eventer', function () {
   it('test service-enenter constructor ', function () {
-    expect(new ServiceEventer('test-event')).to.be.instanceof(ServiceEventer);
+    expect(
+      new ServiceEventer({
+        eventName: 'test-event',
+      })
+    ).to.be.instanceof(ServiceEventer);
   });
 
   it('should throw error when event name is empty', function () {
     expect(() => {
-      new ServiceEventer('');
+      new ServiceEventer({
+        eventName: ''
+      });
     }).to.be.throw();
   });
 
   it('should correct trigger', function () {
-    const evt = new ServiceEventer('evt');
+    const evt = new ServiceEventer({
+      eventName: '',
+    });
     const fn1 = fake();
     const fn2 = fake();
     const fn3 = fake();

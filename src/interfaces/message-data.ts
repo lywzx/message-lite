@@ -96,7 +96,7 @@ export interface IMessageCallData<T = any[]> extends Required<IMessageBaseData<T
 /**
  * 开始监听事件
  */
-export interface IMessageEvent extends IMessageBaseData {
+export interface IMessageEvent<T = any> extends IMessageBaseData<T> {
   /**
    * 服务名称
    */

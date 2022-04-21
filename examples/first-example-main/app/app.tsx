@@ -5,6 +5,7 @@ import { LeftNav } from './left-nav';
 import { AppRoot } from './app-root';
 import { master } from '../master';
 import { ConnectSession, CONNECTED, CONNECTED_FAILED } from 'message-lite';
+import { ScreenService } from '@example/first-example-decl';
 
 function AppLayout() {
   const { updateAppReady, removeApp } = AppStore.useContainer();
@@ -20,9 +21,20 @@ function AppLayout() {
       removeApp(name);
     });
 
+    const service = master.getService(ScreenService)!;
+    const listenResize = (evt: UIEvent) => {
+      console.log((evt.currentTarget as Window).innerWidth, (evt.currentTarget as Window).innerHeight);
+      service.watcher.emit({
+        width: (evt.currentTarget as Window).innerWidth,
+        height: (evt.currentTarget as Window).innerHeight,
+      });
+    };
+
+    window.addEventListener('resize', listenResize, false);
     return () => {
       master.off(CONNECTED);
       master.off(CONNECTED_FAILED);
+      window.removeEventListener('resize', listenResize, false);
     };
   }, []);
 

@@ -1,12 +1,13 @@
 import {
   EMessageType,
-  IMessageCallData,
-  IMessageEvent,
-  IMessageConfig,
   IConnectSession,
+  IMessageBroadcast,
+  IMessageCallData,
+  IMessageConfig,
   IMessageContext,
+  IMessageEvent,
 } from '../interfaces';
-import { messageHelper, createMessageEventName } from '../util';
+import { createMessageEventName, messageHelper } from '../util';
 import { Event } from './event';
 
 /**
@@ -93,9 +94,19 @@ export class MessageContext extends Event implements IMessageContext {
           this.emit(WILL_DISCOUNT, message);
           break;
         }
-        case EMessageType.EVENT_ON:
-        case EMessageType.EVENT_OFF:
-        case EMessageType.EVENT:
+        case EMessageType.EVENT_ON: {
+          if (session) {
+            session.addServiceListener(message as IMessageEvent);
+          }
+          break;
+        }
+        case EMessageType.EVENT_OFF: {
+          if (session) {
+            session.removeServiceListener(message as IMessageEvent);
+          }
+          break;
+        }
+
         case EMessageType.CALL: {
           if (session /*&& session.isReady*/) {
             const eventName = createMessageEventName(message as IMessageEvent | IMessageCallData);
@@ -103,6 +114,7 @@ export class MessageContext extends Event implements IMessageContext {
           }
           break;
         }
+        case EMessageType.EVENT:
         case EMessageType.RESPONSE_EXCEPTION:
         case EMessageType.RESPONSE: {
           if (session) {
@@ -113,6 +125,20 @@ export class MessageContext extends Event implements IMessageContext {
       }
     }
   };
+
+  /**
+   * 事件广播
+   */
+  public broadcast(message: IMessageBroadcast) {
+    this.getSession().forEach((session) => {
+      if (session.listened(message)) {
+        session.sendMessage({
+          ...message,
+          type: EMessageType.EVENT,
+        });
+      }
+    });
+  }
 
   public getSession(): Map<string, IConnectSession>;
   public getSession(channel: string): IConnectSession | undefined;

@@ -10,6 +10,7 @@ import { BasicServer, WILL_CONNECT, WILL_DISCOUNT, MasterClient } from './libs';
 import { parsePort } from './util/session-port';
 import {
   checkReceiveIsMatchInitMessage,
+  createMasterService,
   EHandshakeMessageType,
   parseHandshakeMessage,
   sendHandshakeResponseMessage,
@@ -23,7 +24,10 @@ export class Master extends BasicServer {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getService<T>(serv: Class<T>): T | undefined {
-    throw new Error('api not available!');
+    if (!this.started) {
+      throw new Error('master not started, get service failed!');
+    }
+    return createMasterService(this.messageContext, serv);
   }
 
   protected whenNewClientConnected = async (message: any) => {
@@ -88,25 +92,7 @@ export class Master extends BasicServer {
     this.started = false;
     this.messageContext.dispose();
   }
-  /**
-   * 打开端口等待连接
-   */
-  /*  async opening(option: IOpeningOption): Promise<void> {
-    this.messageContext.start();
-    const res = (await this.messageContext.whenServiceCalled(ConnectService, {
-      method: 'connect',
-      timeout: option.timeout,
-    })) as IMessageCallData;
-    const assignClientIndex = ++this.clientIndex;
-    const channelId = `${option.clientId}:${assignClientIndex}`;
-    await this.messageContext.sendMessageWithOutResponse({
-      id: res.id,
-      type: EMessageType.RESPONSE,
-      data: channelId,
-    });
-    this.messageContext.setChannel(channelId);
-    this.messageContext.readied();
-  }*/
+
   /**
    * 关闭连接
    */

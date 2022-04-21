@@ -1,4 +1,4 @@
-import { createSlaveService, defer, IPromiseDefer } from '../util';
+import { createMessageEventName, createSlaveService, defer, getApiDeclInfo, IPromiseDefer } from '../util';
 import { Class } from '../types';
 import {
   EMessageType,
@@ -7,12 +7,14 @@ import {
   ISessionSendMessage,
   IConnectSessionWaitResponseOption,
   IMessageContext,
+  IListenOption,
+  IMessageEvent,
 } from '../interfaces';
 import { MBaseService } from '../service';
 import { uniqId } from '../util/random';
 import { createPort } from '../util/session-port';
 import { Event } from './event';
-import { ServiceEventer } from './service-eventer';
+import { ServiceEventer, ServiceEventerInnerEmit } from './service-eventer';
 
 export abstract class ConnectSession implements IConnectSession {
   /**
@@ -51,6 +53,12 @@ export abstract class ConnectSession implements IConnectSession {
   protected _closedDefer: IPromiseDefer<void>;
 
   /**
+   * 当前监听的所有服务
+   * @protected
+   */
+  protected listenServiceSet = new Set<string>();
+
+  /**
    * self port
    * @protected
    */
@@ -83,7 +91,7 @@ export abstract class ConnectSession implements IConnectSession {
    * session map
    * @protected
    */
-  protected serviceMap = new Map<Class<any>, MBaseService>();
+  protected serviceMap = new Map<string, MBaseService>();
 
   constructor(protected readonly name = '', protected readonly sender: (message: any) => void) {
     this._openedDefer = defer<void>();
@@ -147,7 +155,7 @@ export abstract class ConnectSession implements IConnectSession {
    * send message
    * @param message
    */
-  public sendMessage(message: ISessionSendMessage) {
+  public sendMessage<T extends ISessionSendMessage>(message: Omit<T, 'channel'>) {
     const mContent: IMessageBaseData = {
       ...message,
       id: message.id ?? this.getMessageId(),
@@ -164,12 +172,15 @@ export abstract class ConnectSession implements IConnectSession {
    * @param message
    * @param option
    */
-  public waitMessageResponse(message: ISessionSendMessage, option: IConnectSessionWaitResponseOption = {}) {
+  public waitMessageResponse<T extends ISessionSendMessage>(
+    message: Omit<T, 'channel'>,
+    option: IConnectSessionWaitResponseOption = {}
+  ) {
     const { id } = message;
     const { timeout, validate = () => true } = option;
-    const { resolve, promise } = defer<IMessageBaseData>(timeout);
+    const { resolve, promise } = defer<T>(timeout);
     const eventId = `res:${id}`;
-    const listener = (data: IMessageBaseData) => {
+    const listener = (data: T) => {
       if (validate(data)) {
         resolve(data);
       }
@@ -182,7 +193,16 @@ export abstract class ConnectSession implements IConnectSession {
   }
 
   public receiveMessage(message: ISessionSendMessage) {
-    this.eventer.emit(`res:${message.fromId!}`, message);
+    switch (message.type) {
+      case EMessageType.EVENT: {
+        const m = message as IMessageEvent;
+        this.eventer.emit(createMessageEventName(m, false), m.data);
+        break;
+      }
+      default: {
+        this.eventer.emit(`res:${message.fromId!}`, message);
+      }
+    }
   }
 
   /**
@@ -207,14 +227,65 @@ export abstract class ConnectSession implements IConnectSession {
   }
 
   /**
+   * 通过名称来获取某个服务
+   * @param name
+   * @protected
+   */
+  protected getServiceByServiceName<T extends MBaseService>(name: string): T {
+    return this.serviceMap.get(name) as T;
+  }
+
+  /**
    * 获取某个服务
    */
   getService<T extends MBaseService>(serv: Class<T>): T {
-    if (this.serviceMap.has(serv)) {
-      return this.serviceMap.get(serv)! as T;
+    const info = getApiDeclInfo(serv);
+    if (this.serviceMap.has(info.name)) {
+      return this.getServiceByServiceName(info.name);
     }
     const service = createSlaveService(this.messageContext, this, serv, ServiceEventer);
-    this.serviceMap.set(serv, service);
+    this.serviceMap.set(info.name, service);
+    info.events.forEach((evt) => {
+      const evtName = createMessageEventName({
+        service: info.name,
+        event: evt.name,
+      });
+      this.eventer.on(evtName, (...args: any) => {
+        (service as any)[evt.name][ServiceEventerInnerEmit](...args);
+      });
+    });
     return service;
+  }
+
+  /**
+   * 添加某个服务事件
+   * @param opt
+   */
+  addServiceListener(opt: IListenOption): boolean {
+    if (!this.listened(opt)) {
+      this.listenServiceSet.add(createMessageEventName(opt, false));
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * 判断某个服务事件是否监听
+   * @param opt
+   */
+  listened(opt: IListenOption): boolean {
+    return this.listenServiceSet.has(createMessageEventName(opt, false));
+  }
+
+  /**
+   * 移除某个服务事件监听
+   * @param opt
+   */
+  removeServiceListener(opt: IListenOption) {
+    if (this.listened(opt)) {
+      this.listenServiceSet.delete(createMessageEventName(opt, false));
+      return true;
+    }
+    return false;
   }
 }

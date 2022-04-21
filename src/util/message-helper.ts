@@ -22,26 +22,32 @@ export function messageHelper(data: any): data is IMessageBaseData {
 /**
  * 根据消息生成对应的响应事件名称
  * @param message
+ * @param withSubPrefix
  */
-export function createMessageEventName(message: {
-  type: EMessageType;
-  service: string;
-  event?: string;
-  method?: string;
-}) {
+export function createMessageEventName(
+  message: {
+    type?: EMessageType;
+    service: string;
+    event?: string;
+    method?: string;
+  },
+  withSubPrefix = true
+) {
   const { type, service, event, method } = message;
   const eventName: string[] = [service, (event || method)!];
-  if (type === EMessageType.EVENT_ON) {
-    eventName.push('on');
-  } else if (type === EMessageType.EVENT_OFF) {
-    eventName.push('off');
-  } else if (type === EMessageType.CALL) {
-    if (service === CONST_SERVICE_NAME) {
-      eventName.push('connect');
+  if (withSubPrefix && type) {
+    if (type === EMessageType.EVENT_ON) {
+      eventName.push('on');
+    } else if (type === EMessageType.EVENT_OFF) {
+      eventName.push('off');
+    } else if (type === EMessageType.CALL) {
+      if (service === CONST_SERVICE_NAME) {
+        eventName.push('connect');
+      }
+      eventName.push('call');
+    } else {
+      eventName.push('emit');
     }
-    eventName.push('call');
-  } else {
-    eventName.push('emit');
   }
 
   return eventName.join(':');
