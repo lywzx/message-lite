@@ -200,7 +200,7 @@ export abstract class ConnectSession implements IConnectSession {
         break;
       }
       default: {
-        this.eventer.emit(`res:${message.fromId!}`, message);
+        this.eventer.emit(`res:${message.fromId!}`, message.data);
       }
     }
   }

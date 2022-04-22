@@ -1,4 +1,4 @@
-import { Message2Service, MessageService, ScreenService } from '@example/first-example-decl';
+import { Message2Service, MessageService, ScreenService, TimeService } from '@example/first-example-decl';
 import Button from 'antd/lib/button';
 import Row from 'antd/lib/row';
 import React, { Fragment, useRef, useState } from 'react';
@@ -28,6 +28,14 @@ export function App() {
   const showMessage3 = async () => {
     const message = slave.getService(Message2Service);
     await message!.info2('点击弹出成功！');
+  };
+
+  const showCurrentTime = async () => {
+    const timeService = slave.getService(TimeService)!;
+    const messageService = slave.getService(MessageService)!;
+    const result = await timeService.getSystemTime();
+    debugger;
+    await messageService.info(`当前系统时间为：${result.now}`);
   };
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -65,6 +73,7 @@ export function App() {
         <Button onClick={showMessage}>message1提示信息</Button>
         <Button onClick={showMessage2}>message2提示信息</Button>
         <Button onClick={showMessage3}>message2提示信息info2</Button>
+        <Button onClick={showCurrentTime}>打印当前系统时间</Button>
       </Row>
       <Row>
         <Button
