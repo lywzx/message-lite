@@ -59,6 +59,7 @@ export abstract class BasicServer extends Event {
             if (!api.notify) {
               const err = e as Error;
               session.sendMessage({
+                fromId: data.id,
                 id: data.id,
                 type: EMessageType.RESPONSE_EXCEPTION,
                 data: err.stack || err.message,

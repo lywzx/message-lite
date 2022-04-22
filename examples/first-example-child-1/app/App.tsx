@@ -34,8 +34,12 @@ export function App() {
     const timeService = slave.getService(TimeService)!;
     const messageService = slave.getService(MessageService)!;
     const result = await timeService.getSystemTime();
-    debugger;
     await messageService.info(`当前系统时间为：${result.now}`);
+  };
+
+  const showUnSupportMethod = async () => {
+    const timeService = slave.getService(TimeService)!;
+    await timeService.timeout(10000);
   };
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -74,6 +78,9 @@ export function App() {
         <Button onClick={showMessage2}>message2提示信息</Button>
         <Button onClick={showMessage3}>message2提示信息info2</Button>
         <Button onClick={showCurrentTime}>打印当前系统时间</Button>
+        <Button danger onClick={showUnSupportMethod}>
+          出错-调用未实现的方法
+        </Button>
       </Row>
       <Row>
         <Button

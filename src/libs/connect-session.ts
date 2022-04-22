@@ -2,13 +2,13 @@ import { createMessageEventName, createSlaveService, defer, getApiDeclInfo, IPro
 import { Class } from '../types';
 import {
   EMessageType,
-  IMessageBaseData,
   IConnectSession,
-  ISessionSendMessage,
   IConnectSessionWaitResponseOption,
-  IMessageContext,
   IListenOption,
+  IMessageBaseData,
+  IMessageContext,
   IMessageEvent,
+  ISessionSendMessage,
 } from '../interfaces';
 import { MBaseService } from '../service';
 import { uniqId } from '../util/random';
@@ -178,11 +178,16 @@ export abstract class ConnectSession implements IConnectSession {
   ) {
     const { id } = message;
     const { timeout, validate = () => true } = option;
-    const { resolve, promise } = defer<T>(timeout);
+    const { resolve, promise, reject } = defer<T>(timeout);
     const eventId = `res:${id}`;
     const listener = (data: T) => {
       if (validate(data)) {
-        resolve(data);
+        if (data.type === EMessageType.RESPONSE_EXCEPTION) {
+          const error = new Error(data.data);
+          reject(error);
+        } else {
+          resolve(data.data);
+        }
       }
     };
     this.eventer.on(eventId, listener);
@@ -200,7 +205,7 @@ export abstract class ConnectSession implements IConnectSession {
         break;
       }
       default: {
-        this.eventer.emit(`res:${message.fromId!}`, message.data);
+        this.eventer.emit(`res:${message.fromId!}`, message);
       }
     }
   }
