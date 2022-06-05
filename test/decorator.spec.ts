@@ -1,5 +1,5 @@
 import { getApiDeclInfo, IApiCallTimeout, IApiDeclFullOption } from '../src/util';
-import { ConnectService } from '../src/connect/connect.service';
+import { ConnectService } from './libs/connect.service';
 import { expect } from 'chai';
 import { ApiDecl, ApiDeclApi, ApiDeclEvent, ApiImpl, ApiUnSupport, MBaseService, IEventer } from '../src';
 

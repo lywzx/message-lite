@@ -12,3 +12,5 @@ export const CONNECTED = 'connected';
  * 连接失败事件
  */
 export const CONNECTED_FAILED = 'connect_failed';
+
+export const CONST_SERVICE_NAME = '$$__message.inner.connect.service__$$';

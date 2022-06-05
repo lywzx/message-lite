@@ -10,6 +10,7 @@ import {
 } from '../interfaces';
 import { MBaseService } from '../service';
 import { createMessageEventName } from './message-helper';
+import { throwException } from './exception';
 
 /**
  * 获取调用服务
@@ -94,7 +95,7 @@ export function createMasterService<T extends MBaseService>(
   // 处理所有的API
   impl.apis.forEach((api) => {
     (s as any)[api.method] = () => {
-      throw new Error('master api method not support called!');
+      throwException('master api method not support called!');
     };
   });
 

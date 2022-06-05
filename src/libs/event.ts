@@ -10,7 +10,10 @@ export class Event implements IEvent {
   protected eventer: Map<string | symbol, Array<{ callback: (...args: any[]) => any; once: boolean }>> = new Map();
 
   on(event: string | symbol, fn: (...args: any[]) => any, once = false) {
-    const callbacks = this.eventer.get(event) || [];
+    const {
+      eventer
+    } = this;
+    const callbacks = eventer.get(event) || [];
     if (!callbacks.find((it) => it.callback === fn && it.once === once)) {
       callbacks.push({
         callback: fn,
@@ -20,21 +23,22 @@ export class Event implements IEvent {
         this.emit(EventOn, event, fn);
       }
     }
-    this.eventer.set(event, callbacks);
+    eventer.set(event, callbacks);
   }
 
   off(event: string | symbol, fn?: (...args: any[]) => any, once = false) {
-    if (this.eventer.has(event)) {
-      const callbacks = this.eventer.get(event)!;
+    const { eventer } = this;
+    if (eventer.has(event)) {
+      const callbacks = eventer.get(event)!;
       const filterCallbacks = fn ? callbacks.filter((item) => item.callback !== fn && item.once !== once) : [];
       const excludeEvent = isExcludeEvent(event);
       if (!fn || !filterCallbacks.length) {
-        this.eventer.delete(event);
+        eventer.delete(event);
         if (!excludeEvent) {
           this.emit(EventOffAll, event, fn);
         }
       } else {
-        this.eventer.set(event, filterCallbacks);
+        eventer.set(event, filterCallbacks);
       }
       if (filterCallbacks.length !== callbacks.length) {
         Array.from({ length: callbacks.length - filterCallbacks.length }).forEach(() => {

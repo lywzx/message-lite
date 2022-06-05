@@ -4,3 +4,4 @@ export * from './create-service';
 export * from './defer';
 export * from './message-helper';
 export * from './handshake';
+export * from './exception';

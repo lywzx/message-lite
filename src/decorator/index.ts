@@ -8,6 +8,7 @@ import {
   getApiDeclInfo,
 } from '../util/api-decl';
 import { MBaseService } from '../service';
+import { throwException } from '../util';
 
 /**
  * decl api
@@ -77,7 +78,7 @@ export function ApiImpl() {
     const message = `class ${serv.name} should extends impl service`;
     try {
       getApiDeclInfo(serv, false);
-      throw new Error(message);
+      throwException(message);
     } catch (e) {
       if (e.message === message) {
         throw e;

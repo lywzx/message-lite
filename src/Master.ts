@@ -13,7 +13,7 @@ import {
   createMasterService,
   EHandshakeMessageType,
   parseHandshakeMessage,
-  sendHandshakeResponseMessage,
+  sendHandshakeResponseMessage, throwException,
 } from './util';
 import { CONNECTED, CONNECTED_FAILED } from './constant';
 
@@ -25,7 +25,7 @@ export class Master extends BasicServer {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getService<T>(serv: Class<T>): T | undefined {
     if (!this.started) {
-      throw new Error('master not started, get service failed!');
+      throwException('master not started, get service failed!');
     }
     return createMasterService(this.messageContext, serv);
   }
@@ -79,7 +79,7 @@ export class Master extends BasicServer {
 
   async start(): Promise<void> {
     if (this.started) {
-      throw new Error('serve has been started!');
+      throwException('serve has been started!');
     }
     this.started = true;
     const messageContext = this.messageContext;
@@ -102,7 +102,7 @@ export class Master extends BasicServer {
 
   public getSession(name?: string): Array<IConnectSession> {
     if (!this.started) {
-      throw new Error('app not started');
+      throwException('app not started');
     }
     const sessions = Array.from(this.messageContext.getSession()).map(([channel, session]) => session);
 

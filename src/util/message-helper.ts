@@ -1,5 +1,5 @@
 import { EMessageType, IMessageBaseData } from '../interfaces';
-import { CONST_SERVICE_NAME } from '../connect/connect.service';
+import { CONST_SERVICE_NAME } from '../constant';
 
 export function messageHelper(data: any): data is IMessageBaseData {
   return (

@@ -1,4 +1,11 @@
-import { createMessageEventName, createSlaveService, defer, getApiDeclInfo, IPromiseDefer } from '../util';
+import {
+  createMessageEventName,
+  createSlaveService,
+  defer,
+  getApiDeclInfo,
+  IPromiseDefer,
+  throwException
+} from '../util';
 import { Class } from '../types';
 import {
   EMessageType,
@@ -176,6 +183,7 @@ export abstract class ConnectSession implements IConnectSession {
     message: Omit<T, 'channel'>,
     option: IConnectSessionWaitResponseOption = {}
   ) {
+    const { eventer } = this;
     const { id } = message;
     const { timeout, validate = () => true } = option;
     const { resolve, promise, reject } = defer<T>(timeout);
@@ -190,22 +198,23 @@ export abstract class ConnectSession implements IConnectSession {
         }
       }
     };
-    this.eventer.on(eventId, listener);
+    eventer.on(eventId, listener);
 
     return promise.finally(() => {
-      this.eventer.off(eventId, listener);
+      eventer.off(eventId, listener);
     });
   }
 
   public receiveMessage(message: ISessionSendMessage) {
+    const { eventer } = this;
     switch (message.type) {
       case EMessageType.EVENT: {
         const m = message as IMessageEvent;
-        this.eventer.emit(createMessageEventName(m, false), m.data);
+        eventer.emit(createMessageEventName(m, false), m.data);
         break;
       }
       default: {
-        this.eventer.emit(`res:${message.fromId!}`, message);
+        eventer.emit(`res:${message.fromId!}`, message);
       }
     }
   }
@@ -226,7 +235,7 @@ export abstract class ConnectSession implements IConnectSession {
       if (data.type === EMessageType.RESPONSE) {
         return data.data;
       } else if (data.type === EMessageType.RESPONSE_EXCEPTION) {
-        throw new Error(data.data);
+        throwException(data.data);
       }
     });
   }
@@ -245,17 +254,19 @@ export abstract class ConnectSession implements IConnectSession {
    */
   getService<T extends MBaseService>(serv: Class<T>): T {
     const info = getApiDeclInfo(serv);
-    if (this.serviceMap.has(info.name)) {
-      return this.getServiceByServiceName(info.name);
+    const { serviceMap, eventer } = this;
+    const name = info.name;
+    if (serviceMap.has(name)) {
+      return this.getServiceByServiceName(name);
     }
     const service = createSlaveService(this.messageContext, this, serv, ServiceEventer);
-    this.serviceMap.set(info.name, service);
+    serviceMap.set(name, service);
     info.events.forEach((evt) => {
       const evtName = createMessageEventName({
-        service: info.name,
+        service: name,
         event: evt.name,
       });
-      this.eventer.on(evtName, (...args: any) => {
+      eventer.on(evtName, (...args: any) => {
         (service as any)[evt.name][ServiceEventerInnerEmit](...args);
       });
     });

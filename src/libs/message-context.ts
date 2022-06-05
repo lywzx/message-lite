@@ -7,7 +7,7 @@ import {
   IMessageContext,
   IMessageEvent,
 } from '../interfaces';
-import { createMessageEventName, messageHelper } from '../util';
+import { createMessageEventName, messageHelper, throwException } from '../util';
 import { Event } from './event';
 
 /**
@@ -36,7 +36,7 @@ export class MessageContext extends Event implements IMessageContext {
   // 开始监听
   public start() {
     if (this.isReady) {
-      throw new Error('message has ready!');
+      throwException('message has ready!');
     }
     this.isReady = true;
     this.option.listenMessage(this.handMessage);
@@ -49,9 +49,10 @@ export class MessageContext extends Event implements IMessageContext {
 
   public detachSession(session: IConnectSession | string) {
     const key = typeof session === 'string' ? session : session.getReceiverPort();
-    if (this.session.has(key)) {
-      const s = this.session.get(key)!;
-      this.session.delete(key);
+    const sess = this.session;
+    if (sess.has(key)) {
+      const s = sess.get(key)!;
+      sess.delete(key);
       s.detachMessageContext();
     }
   }

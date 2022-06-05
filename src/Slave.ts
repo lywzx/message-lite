@@ -4,7 +4,7 @@ import {
   defer,
   parseHandshakeMessage,
   sendHandshakeResponseMessage,
-  sendInitMessage,
+  sendInitMessage, throwException,
 } from './util';
 import { BasicServer, ConnectSession, WILL_CONNECT, SlaveClient } from './libs';
 import { EMessageType, IMessageBaseData, ISlaveClientConfig } from './interfaces';
@@ -29,7 +29,7 @@ export class Slave extends BasicServer {
    */
   async connect(option: IConnectOption = {}): Promise<void> {
     if (this.isConnecting) {
-      throw new Error('client is connecting server, please not call twice!');
+      throwException('client is connecting server, please not call twice!');
     }
     this.isConnecting = true;
     const session = (this.session = new SlaveClient(option.name, this.option.sendMessage));

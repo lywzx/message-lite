@@ -1,8 +1,6 @@
-import { ApiDecl, ApiDeclApi } from '../decorator';
-import { ApiUnSupport } from '../util';
-import { MBaseService } from '../service';
-
-export const CONST_SERVICE_NAME = '$$__message.inner.connect.service__$$';
+import { ApiDecl, ApiDeclApi, CONST_SERVICE_NAME } from '../../src';
+import { ApiUnSupport } from '../../src';
+import { MBaseService } from '../../src';
 
 @ApiDecl({
   name: CONST_SERVICE_NAME,

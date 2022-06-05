@@ -1,5 +1,6 @@
 import { IEventer, IServiceEventerOption } from '../interfaces';
 import { Event, EventOff, EventOn } from './event';
+import { throwException } from '../util';
 
 export const ServiceEventerInnerEmit = Symbol('service-eventer-inner-emit');
 
@@ -14,12 +15,12 @@ export class ServiceEventer<T = any> implements IEventer<T> {
 
   constructor(protected readonly option: IServiceEventerOption) {
     const { eventName } = option;
-    this.event = new Event();
+    const event = (this.event = new Event());
     if (!eventName) {
-      throw new Error('event name can not be empty!');
+      throwException('event name can not be empty!');
     }
-    this.event.on(EventOn, this.whenEventOn);
-    this.event.on(EventOff, this.whenEventOff);
+    event.on(EventOn, this.whenEventOn);
+    event.on(EventOff, this.whenEventOff);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -51,16 +52,20 @@ export class ServiceEventer<T = any> implements IEventer<T> {
   }
 
   on(fn: (data: T) => any) {
-    this.event.on(this.option.eventName, fn);
+    const { event, option } = this;
+    const eventName = option.eventName;
+    event.on(eventName, fn);
     return () => {
-      this.event.off(this.option.eventName, fn);
+      event.off(eventName, fn);
     };
   }
 
   once(fn: (data: T) => any) {
-    this.event.once(this.option.eventName, fn);
+    const { event, option } = this;
+    const eventName = option.eventName;
+    event.once(eventName, fn);
     return () => {
-      this.event.off(this.option.eventName, fn);
+      event.off(eventName, fn);
     };
   }
 
