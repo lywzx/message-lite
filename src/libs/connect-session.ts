@@ -4,7 +4,7 @@ import {
   defer,
   getApiDeclInfo,
   IPromiseDefer,
-  throwException
+  throwException,
 } from '../util';
 import { Class } from '../types';
 import {

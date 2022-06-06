@@ -27,8 +27,8 @@ export class ServiceEventer<T = any> implements IEventer<T> {
   protected whenEventOn = (evtName: string, callback?: Function) => {
     const { eventName, whenListened } = this.option;
     if (eventName === evtName && whenListened) {
-      this.listened++;
-      if (this.listened > 0) {
+      const listened = ++this.listened;
+      if (listened === 1) {
         whenListened();
       }
     }
@@ -38,8 +38,8 @@ export class ServiceEventer<T = any> implements IEventer<T> {
   protected whenEventOff = (evtName: string, callback?: Function) => {
     const { eventName, whenUnListened } = this.option;
     if (eventName === evtName && whenUnListened) {
-      this.listened--;
-      if (!this.listened) {
+      const listened = --this.listened;
+      if (!listened) {
         whenUnListened();
       }
     }
@@ -65,7 +65,7 @@ export class ServiceEventer<T = any> implements IEventer<T> {
     const eventName = option.eventName;
     event.once(eventName, fn);
     return () => {
-      event.off(eventName, fn);
+      event.off(eventName, fn, true);
     };
   }
 

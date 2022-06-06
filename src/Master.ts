@@ -13,7 +13,8 @@ import {
   createMasterService,
   EHandshakeMessageType,
   parseHandshakeMessage,
-  sendHandshakeResponseMessage, throwException,
+  sendHandshakeResponseMessage,
+  throwException,
 } from './util';
 import { CONNECTED, CONNECTED_FAILED } from './constant';
 

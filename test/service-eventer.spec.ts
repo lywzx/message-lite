@@ -2,6 +2,7 @@ import { describe } from 'mocha';
 import { expect } from 'chai';
 import { ServiceEventer } from '../src/libs';
 import { fake } from 'sinon';
+import { noop } from 'lodash';
 
 describe('test service-eventer', function () {
   it('test service-enenter constructor ', function () {
@@ -15,14 +16,16 @@ describe('test service-eventer', function () {
   it('should throw error when event name is empty', function () {
     expect(() => {
       new ServiceEventer({
-        eventName: ''
+        eventName: '',
       });
     }).to.be.throw();
   });
 
   it('should correct trigger', function () {
     const evt = new ServiceEventer({
-      eventName: '',
+      eventName: 'test-evt',
+      whenListened: noop,
+      whenUnListened: noop,
     });
     const fn1 = fake();
     const fn2 = fake();

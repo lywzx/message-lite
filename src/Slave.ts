@@ -4,7 +4,8 @@ import {
   defer,
   parseHandshakeMessage,
   sendHandshakeResponseMessage,
-  sendInitMessage, throwException,
+  sendInitMessage,
+  throwException,
 } from './util';
 import { BasicServer, ConnectSession, WILL_CONNECT, SlaveClient } from './libs';
 import { EMessageType, IMessageBaseData, ISlaveClientConfig } from './interfaces';

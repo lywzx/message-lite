@@ -1,18 +1,26 @@
-import { IEvent } from '../interfaces';
+import { IEvent, IEventCallback } from '../interfaces';
 
+/**
+ * when event listen
+ */
 export const EventOn = Symbol('when-event-on');
+/**
+ * when event off listen
+ */
 export const EventOff = Symbol('when-event-off');
+/**
+ * when event all off
+ */
 export const EventOffAll = Symbol('when-event-off-all');
 
-const isExcludeEvent = (event: string | symbol) => [EventOn, EventOff].includes(event as unknown as any);
+const eventOnOrOffSet = new Set([EventOff, EventOn]);
+const isExcludeEvent = (event: string | symbol) => eventOnOrOffSet.has(event as unknown as any);
 
 export class Event implements IEvent {
-  protected eventer: Map<string | symbol, Array<{ callback: (...args: any[]) => any; once: boolean }>> = new Map();
+  protected eventer: Map<string | symbol, Array<{ callback: IEventCallback; once: boolean }>> = new Map();
 
   on(event: string | symbol, fn: (...args: any[]) => any, once = false) {
-    const {
-      eventer
-    } = this;
+    const { eventer } = this;
     const callbacks = eventer.get(event) || [];
     if (!callbacks.find((it) => it.callback === fn && it.once === once)) {
       callbacks.push({
@@ -26,11 +34,20 @@ export class Event implements IEvent {
     eventer.set(event, callbacks);
   }
 
-  off(event: string | symbol, fn?: (...args: any[]) => any, once = false) {
+  off(event: string | symbol, fn?: IEventCallback, once?: boolean) {
     const { eventer } = this;
     if (eventer.has(event)) {
       const callbacks = eventer.get(event)!;
-      const filterCallbacks = fn ? callbacks.filter((item) => item.callback !== fn && item.once !== once) : [];
+      const isBoolean = typeof once === 'boolean';
+      const filterCallbacks = fn
+        ? callbacks.filter((item) => {
+            const notSameCallback = item.callback === fn;
+            if (isBoolean) {
+              return !(notSameCallback && item.once === once);
+            }
+            return !notSameCallback;
+          })
+        : [];
       const excludeEvent = isExcludeEvent(event);
       if (!fn || !filterCallbacks.length) {
         eventer.delete(event);
@@ -48,7 +65,7 @@ export class Event implements IEvent {
     }
   }
 
-  once(event: string | symbol, fn: (...args: any[]) => any) {
+  once(event: string | symbol, fn: IEventCallback) {
     this.on(event, fn, true);
   }
 
@@ -60,7 +77,7 @@ export class Event implements IEvent {
         callback(...args);
       } finally {
         if (once) {
-          this.off(event, callback);
+          this.off(event, callback, once);
         }
       }
     });
