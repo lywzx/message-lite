@@ -13,7 +13,7 @@ export const EventOff = Symbol('when-event-off');
  */
 export const EventOffAll = Symbol('when-event-off-all');
 
-const eventOnOrOffSet = new Set([EventOff, EventOn]);
+const eventOnOrOffSet = new Set([EventOff, EventOn, EventOffAll]);
 const isExcludeEvent = (event: string | symbol) => eventOnOrOffSet.has(event as unknown as any);
 
 export class Event implements IEvent {
