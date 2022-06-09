@@ -106,6 +106,29 @@ describe('#event test impl', () => {
     expect(fn2.secondCall.args).to.be.eql(['b']);
   });
 
+  test('test event off when once or on', () => {
+    const fn1 = fake();
+    const evt = new Event();
+    evt.on(eventName, fn1);
+    evt.once(eventName, fn1);
+    evt.emit(eventName, 1);
+    expect(fn1.calledTwice).to.be.true;
+    evt.emit(eventName, 2);
+    expect(fn1.calledThrice).to.be.true;
+    evt.once(eventName, fn1);
+    evt.off(eventName, fn1, true);
+    evt.emit(eventName, 3);
+    expect(fn1.callCount).to.be.eq(4);
+    evt.off(eventName, fn1, false);
+    evt.emit(eventName, 4);
+    expect(fn1.callCount).to.be.eq(4);
+    evt.on(eventName, fn1);
+    evt.once(eventName, fn1);
+    evt.off(eventName, fn1);
+    evt.emit(eventName, 5);
+    expect(fn1.callCount).to.be.eq(4);
+  });
+
   test('test event many fn, will trigger', () => {
     const evt = new Event();
     const times = Array.from({

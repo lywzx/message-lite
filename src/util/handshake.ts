@@ -52,11 +52,11 @@ export interface IHandshakeMessage {
  */
 export function parseHandshakeMessage(message: string): IHandshakeMessage | undefined {
   if (isHandshakeMessage(message)) {
-    const value = message.match(handshakeMessage);
+    const value = message.match(handshakeMessage)!;
     return {
-      type: value![1] === '♨' ? EHandshakeMessageType.INIT : EHandshakeMessageType.RES,
-      base: parseInt(value![2]),
-      offset: parseInt(value![3]),
+      type: value[1] === '♨' ? EHandshakeMessageType.INIT : EHandshakeMessageType.RES,
+      base: parseInt(value[2]),
+      offset: parseInt(value[3]),
     };
   }
 }
