@@ -27,17 +27,19 @@ export function createSlaveService<T extends MBaseService>(
 ) {
   const s = new serv();
   const impl = getApiDeclInfo(serv);
+  const { name: serviceName } = impl;
   // 处理所有的API
   impl.apis.forEach((api) => {
-    (s as any)[api.method] = function (data: any, config: any = {}) {
+    const method = api.method;
+    (s as any)[method] = function (data: any, config: any = {}) {
       const option: IApiDeclFullApi = {
         ...api,
         ...config,
       };
       const callData = {
         type: EMessageType.CALL,
-        service: impl.name,
-        method: api.method,
+        service: serviceName,
+        method,
         data,
       };
       const message = session.sendMessage(callData) as IMessageCallData;
@@ -45,19 +47,20 @@ export function createSlaveService<T extends MBaseService>(
         return Promise.resolve();
       } else {
         return session.waitMessageResponse(message, {
-          timeout: option.timeout || 30000,
+          timeout: option.timeout,
         });
       }
     };
   });
   // 处理所有的事件
   impl.events.forEach((evt) => {
+    const evtName = evt.name;
     const opt = {
-      service: impl.name,
-      event: evt.name,
+      service: serviceName,
+      event: evtName,
     };
     const eventName = createMessageEventName(opt, false);
-    const evter = ((s as any)[evt.name] = new eventer({
+    const evter = ((s as any)[evtName] = new eventer({
       eventName,
       whenListened() {
         messageContext.on(eventName, (...args: any[]) => {
@@ -101,11 +104,12 @@ export function createMasterService<T extends MBaseService>(
 
   // 处理事件
   impl.events.forEach((evt) => {
-    (s as any)[evt.name] = {
+    const evtName = evt.name;
+    (s as any)[evtName] = {
       emit(data: any) {
         messageContext.broadcast({
           service: impl.name,
-          event: evt.name,
+          event: evtName,
           data,
         });
       },
