@@ -7,7 +7,6 @@ import {
 } from './interfaces';
 import { Class } from './types';
 import { BasicServer, WILL_CONNECT, WILL_DISCOUNT, MasterClient } from './libs';
-import { parsePort } from './util/session-port';
 import {
   checkReceiveIsMatchInitMessage,
   createMasterService,
@@ -15,6 +14,7 @@ import {
   parseHandshakeMessage,
   sendHandshakeResponseMessage,
   throwException,
+  parsePort,
 } from './util';
 import { CONNECTED, CONNECTED_FAILED } from './constant';
 
