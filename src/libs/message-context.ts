@@ -1,13 +1,15 @@
 import {
   EMessageType,
   IConnectSession,
+  IMessageBaseData,
   IMessageBroadcast,
   IMessageCallData,
   IMessageConfig,
   IMessageContext,
   IMessageEvent,
+  ISessionSendMessage,
 } from '../interfaces';
-import { createMessageEventName, messageHelper, throwException } from '../util';
+import { createMessageEventName, messageHelper, throwException, uniqId } from '../util';
 import { Event } from './event';
 
 /**
@@ -33,6 +35,30 @@ export class MessageContext extends Event implements IMessageContext {
     this.t = option.transformMessage || ((m: any) => m);
   }
 
+  sendMessage<T extends ISessionSendMessage>(message: Pick<T, Exclude<keyof T, 'channel'>>): IMessageBaseData<any>;
+  sendMessage<T extends ISessionSendMessage>(
+    message: Pick<T, Exclude<keyof T, 'channel'>>,
+    channel: string
+  ): IMessageBaseData<any>;
+  sendMessage<T extends ISessionSendMessage>(
+    message: Pick<T, Exclude<keyof T, 'channel'>>,
+    session: IConnectSession
+  ): IMessageBaseData<any>;
+  sendMessage(message: any, session?: any) {
+    const { option } = this;
+    const mContent: IMessageBaseData = {
+      ...message,
+      id: message.id ?? uniqId(),
+      channel: '',
+    };
+
+    Promise.resolve().then(() => {
+      option.listenMessage(mContent);
+    });
+    return mContent;
+  }
+
+  stop(): void {}
   // 开始监听
   public start() {
     if (this.isReady) {

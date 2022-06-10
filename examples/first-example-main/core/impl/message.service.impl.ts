@@ -2,7 +2,7 @@ import { IMessageOption, ImessageServiceType, MessageService } from '@example/fi
 import { message as antdMessage } from 'antd';
 import { isString } from 'lodash';
 import { ApiImpl } from 'message-lite';
-import { defer } from 'message-lite/util';
+import { createDefer } from 'message-lite/util';
 
 export function applyPrefix(content: string, prefix?: string) {
   return `${prefix ? prefix + ': ' : ''}${content}`;
@@ -28,7 +28,7 @@ export function showAntdMessage(
 ) {
   const option = transformMessage(content, prefix);
   let onClose: undefined | (() => void);
-  const deferObj = defer<void>();
+  const deferObj = createDefer<void>();
   if (option.waitingClose) {
     onClose = () => {
       deferObj.resolve();

@@ -1,7 +1,7 @@
 import {
   createMessageEventName,
   createSlaveService,
-  defer,
+  createDefer,
   getApiDeclInfo,
   IPromiseDefer,
   throwException,
@@ -18,8 +18,7 @@ import {
   ISessionSendMessage,
 } from '../interfaces';
 import { MBaseService } from '../service';
-import { uniqId } from '../util/random';
-import { createPort } from '../util/session-port';
+import { uniqId, createPort } from '../util';
 import { Event } from './event';
 import { ServiceEventer, ServiceEventerInnerEmit } from './service-eventer';
 
@@ -28,6 +27,11 @@ export abstract class ConnectSession implements IConnectSession {
    * 断开连接
    */
   abstract disconnect(): Promise<void>;
+
+  /**
+   * 开始连接
+   */
+  abstract connect(): Promise<void>;
 
   /**
    * wait session opened
@@ -83,12 +87,6 @@ export abstract class ConnectSession implements IConnectSession {
   protected eventer: Event;
 
   /**
-   * message id
-   * @protected
-   */
-  protected messageId = 0;
-
-  /**
    * message context
    * @protected
    */
@@ -100,9 +98,9 @@ export abstract class ConnectSession implements IConnectSession {
    */
   protected serviceMap = new Map<string, MBaseService>();
 
-  constructor(protected readonly name = '', protected readonly sender: (message: any) => void) {
-    this._openedDefer = defer<void>();
-    this._closedDefer = defer<void>();
+  constructor(protected readonly name = '') {
+    this._openedDefer = createDefer<void>();
+    this._closedDefer = createDefer<void>();
     this.port1 = uniqId();
     this.eventer = new Event();
   }
@@ -132,13 +130,6 @@ export abstract class ConnectSession implements IConnectSession {
     this._openedDefer.resolve();
   }
 
-  /**
-   * generate message id
-   */
-  public getMessageId() {
-    return ++this.messageId;
-  }
-
   public getSenderPort() {
     return createPort(this.name, this.port1, this.port2);
   }
@@ -163,15 +154,7 @@ export abstract class ConnectSession implements IConnectSession {
    * @param message
    */
   public sendMessage<T extends ISessionSendMessage>(message: Omit<T, 'channel'>) {
-    const mContent: IMessageBaseData = {
-      ...message,
-      id: message.id ?? this.getMessageId(),
-      channel: this.getSenderPort(),
-    };
-    Promise.resolve().then(() => {
-      this.sender(mContent);
-    });
-    return mContent;
+
   }
 
   /**
@@ -186,7 +169,7 @@ export abstract class ConnectSession implements IConnectSession {
     const { eventer } = this;
     const { id } = message;
     const { timeout, validate = () => true } = option;
-    const { resolve, promise, reject } = defer<T>(timeout);
+    const { resolve, promise, reject } = createDefer<T>(timeout);
     const eventId = `res:${id}`;
     const listener = (data: T) => {
       if (validate(data)) {

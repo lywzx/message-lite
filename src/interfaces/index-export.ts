@@ -1,3 +1,3 @@
 export * from './server-config';
-export * from './eventer';
+export { IEventer, IEventerUnListener } from './eventer';
 export * from './connect-session';

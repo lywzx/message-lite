@@ -8,7 +8,7 @@ import {
   sendHandshakeResponseMessage,
   sendInitMessage,
 } from '../../src/util';
-import { defer } from '../../src/util';
+import { createDefer } from '../../src/util';
 
 describe('#handshake message test util', () => {
   test('#sendInitMessage should return string', () => {
@@ -72,7 +72,7 @@ describe('#handshake message test util', () => {
     const initMessage = sendInitMessage();
     const delay = 100;
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    await defer(delay).promise.catch((e) => {});
+    await createDefer(delay).promise.catch((e) => {});
     const responseMessage = sendHandshakeResponseMessage(initMessage);
     expect(checkReceiveIsMatchInitMessage(initMessage, responseMessage)).to.be.true;
     expect(checkReceiveIsMatchInitMessage(initMessage, responseMessage, delay - 10)).to.be.false;

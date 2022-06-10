@@ -6,9 +6,26 @@ export interface IServiceEventerOption {
   whenUnListened?: () => void;
 }
 
+/**
+ * service eventer
+ */
 export interface IEventer<T = any> {
+  /**
+   * only listen once
+   * @param fn
+   */
   once(fn: (data: T) => any): IEventerUnListener;
+
+  /**
+   * add event listenter
+   * @param fn
+   */
   on(fn: (data: T) => any): IEventerUnListener;
+
+  /**
+   * emit data
+   * @param data
+   */
   emit(data: T): void;
 }
 

@@ -1,3 +1,6 @@
+import { MBaseService } from '../service';
+import { Class } from '../types';
+
 export interface IMessageConfig<T extends (message: any) => void = (message: any) => void> {
   listenMessage(fn: T): void;
   unListenMessage(fn: T): void;
@@ -6,20 +9,15 @@ export interface IMessageConfig<T extends (message: any) => void = (message: any
    * @param message
    */
   transformMessage?: (message: any) => any;
+  /**
+   * create message sender
+   */
+  createSender(origin: any): (message: any) => void;
 }
-
 /**
- * master create server
+ * add service config
  */
-export interface IMasterServerConfig<T extends (message: any) => void = (message: any) => void>
-  extends IMessageConfig<T> {
-  createMasterSender(message: any): (m: any) => void;
-}
-
-/**
- * slave server config
- */
-export interface ISlaveClientConfig<T extends (message: any) => void = (message: any) => void>
-  extends IMessageConfig<T> {
-  sendMessage(message: any): void;
+export interface IAddService<T extends MBaseService = any, U extends T = any> {
+  impl: Class<U>;
+  decl: Class<T>;
 }

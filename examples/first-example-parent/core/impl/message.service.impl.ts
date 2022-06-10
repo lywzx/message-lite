@@ -1,7 +1,7 @@
 import { IMessageOption, ImessageServiceType, MessageService } from '@example/first-example-parent-decl';
 import { message as antdMessage } from 'antd';
 import { isString } from 'lodash';
-import { defer } from 'message-lite/util';
+import { createDefer } from 'message-lite/util';
 import { ApiImpl } from 'message-lite';
 
 function transformMessage(content: ImessageServiceType): IMessageOption {
@@ -19,7 +19,7 @@ function showAntdMessage(
 ) {
   const option = transformMessage(content);
   let onClose: undefined | (() => void);
-  const deferObj = defer<void>();
+  const deferObj = createDefer<void>();
 
   if (option.waitingClose) {
     onClose = () => {

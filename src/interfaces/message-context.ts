@@ -1,9 +1,12 @@
 import { IEvent } from './event';
-import { IConnectSession } from './connect-session';
-import { IMessageEvent } from './message-data';
+import { IConnectSession, ISessionSendMessage } from './connect-session';
+import { IMessageBaseData, IMessageEvent } from './message-data';
 
 export type IMessageBroadcast = Omit<IMessageEvent, 'id' | 'channel' | 'type'>;
 
+/**
+ * message context
+ */
 export interface IMessageContext extends IEvent {
   /**
    * 启动
@@ -21,4 +24,16 @@ export interface IMessageContext extends IEvent {
    * 广播
    */
   broadcast(message: IMessageBroadcast): void;
+
+  /**
+   * 发送消息
+   * @param message
+   */
+  sendMessage<T extends ISessionSendMessage>(message: Omit<T, 'channel'>): IMessageBaseData;
+  sendMessage<T extends ISessionSendMessage>(message: Omit<T, 'channel'>, channel: string): IMessageBaseData;
+  sendMessage<T extends ISessionSendMessage>(message: Omit<T, 'channel'>, session: IConnectSession): IMessageBaseData;
+  /**
+   * 停止
+   */
+  stop(): void;
 }

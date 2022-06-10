@@ -1,14 +1,14 @@
 import { Class } from './types';
 import {
   checkReceiveIsMatchInitMessage,
-  defer,
+  createDefer,
   parseHandshakeMessage,
   sendHandshakeResponseMessage,
   sendInitMessage,
   throwException,
 } from './util';
 import { BasicServer, ConnectSession, WILL_CONNECT, SlaveClient } from './libs';
-import { EMessageType, IMessageBaseData, ISlaveClientConfig } from './interfaces';
+import { EMessageType, IMessageBaseData, IMessageConfig } from './interfaces';
 import { MBaseService } from './service';
 
 export interface IConnectOption {
@@ -21,7 +21,7 @@ export class Slave extends BasicServer {
 
   protected session!: ConnectSession;
 
-  constructor(protected readonly option: ISlaveClientConfig) {
+  constructor(protected readonly option: IMessageConfig) {
     super(option);
   }
 
@@ -33,7 +33,7 @@ export class Slave extends BasicServer {
       throwException('client is connecting server, please not call twice!');
     }
     this.isConnecting = true;
-    const session = (this.session = new SlaveClient(option.name, this.option.sendMessage));
+    const session = (this.session = new SlaveClient(option.name));
     const { messageContext, option: slaveOption } = this;
     const initMessage = sendInitMessage();
 
@@ -61,7 +61,7 @@ export class Slave extends BasicServer {
           };
           messageContext.on(WILL_CONNECT, waitConnect);
         }),
-        defer(option.timeout).promise,
+        createDefer(option.timeout).promise,
       ]).finally(() => {
         messageContext.off(WILL_CONNECT, waitConnect);
       })) as IMessageBaseData;

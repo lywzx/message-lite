@@ -18,6 +18,9 @@ export interface IConnectSessionWaitResponseOption {
   validate?: (value: any) => boolean;
 }
 
+/**
+ * session 连接
+ */
 export interface IConnectSession {
   /**
    * 连接成功
@@ -42,14 +45,14 @@ export interface IConnectSession {
   disconnect(): Promise<void>;
 
   /**
+   * 开始连接
+   */
+  connect(): Promise<void>;
+
+  /**
    * session 状态初始化完成
    */
   ready(): Promise<void>;
-
-  /**
-   * 生成message id
-   */
-  getMessageId(): number;
 
   /**
    * 获取发送端口
@@ -75,12 +78,6 @@ export interface IConnectSession {
    * detach message context
    */
   detachMessageContext(): void;
-
-  /**
-   * 发送消息
-   * @param message
-   */
-  sendMessage<T extends ISessionSendMessage>(message: Omit<T, 'channel'>): IMessageBaseData;
 
   /**
    * 接收消息

@@ -13,7 +13,7 @@ export interface IPromiseDefer<T> {
 /**
  * 生成promise的defer对象
  */
-export function defer<T>(
+export function createDefer<T>(
   timeout: number | undefined = undefined,
   exception: (timeout?: number) => Error = (timeout) => new Error(`defer waiting timeout, ${timeout}ms`)
 ): IPromiseDefer<T> {
