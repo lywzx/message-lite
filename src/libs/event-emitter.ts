@@ -16,7 +16,7 @@ export const EventOffAll = Symbol('when-event-off-all');
 const eventOnOrOffSet = new Set([EventOff, EventOn, EventOffAll]);
 const isExcludeEvent = (event: string | symbol) => eventOnOrOffSet.has(event as unknown as any);
 
-export class Event implements IEvent {
+export class EventEmitter implements IEvent {
   protected eventer: Map<string | symbol, Array<{ callback: IEventCallback; once: boolean }>> = new Map();
 
   on(event: string | symbol, fn: (...args: any[]) => any, once = false) {

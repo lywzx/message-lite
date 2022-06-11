@@ -1,11 +1,11 @@
-import { IAddService, IMessageConfig } from '../interfaces';
+import { IAddService, IMessageConfig, IMessageContext } from '../interfaces';
 import { Class } from '../types';
 import { MessageContext } from './message-context';
 import { addServices } from '../util';
-import { Event } from './event';
+import { EventEmitter } from './event-emitter';
 
-export abstract class BasicServer extends Event {
-  protected messageContext: MessageContext;
+export abstract class BasicServer extends EventEmitter {
+  protected messageContext: IMessageContext;
 
   protected started = false;
 

@@ -6,12 +6,16 @@ import {
   sendHandshakeResponseMessage,
   sendInitMessage,
 } from '../util';
-import { EMessageType, IMessageBaseData } from '../interfaces';
+import { EMessageType, IMessageBaseData, IMessageContext, ITimeout } from '../interfaces';
 import { WILL_CONNECT } from './message-context';
 
+export interface ISlaveClientConnectOption extends ITimeout {
+  messageContext: IMessageContext;
+}
+
 export class SlaveClient extends ConnectSession {
-  connect(): Promise<void> {
-    const { messageContext } = this;
+  async connect(option: ISlaveClientConnectOption): Promise<void> {
+    const { messageContext, timeout = 3000 } = option;
     const initMessage = sendInitMessage();
 
     this.sendMessage({
@@ -20,47 +24,44 @@ export class SlaveClient extends ConnectSession {
     });
     // 开始监听
     messageContext.start();
-    let waitConnect = (message: any) => {
+    let waitConnect = (message: IMessageBaseData, messageOrigin: any) => {
       // nowork
     };
     try {
       // 等待消息响应
       const response = (await Promise.race([
         new Promise((resolve) => {
-          waitConnect = (message: any) => {
-            const msg = (
-              slaveOption.transformMessage ? slaveOption.transformMessage(message) : message
-            ) as IMessageBaseData;
-            const res = msg?.data || '';
+          waitConnect = (message: IMessageBaseData, messageOrigin: any) => {
+            const res = message.data || '';
             if (checkReceiveIsMatchInitMessage(initMessage, res)) {
-              resolve(msg);
+              resolve(message);
             }
           };
           messageContext.on(WILL_CONNECT, waitConnect);
         }),
-        createDefer(option.timeout).promise,
+        createDefer(timeout, (timeout) => new Error('slave connect timeout.')).promise,
       ]).finally(() => {
         messageContext.off(WILL_CONNECT, waitConnect);
       })) as IMessageBaseData;
       const handshake = response.data;
       const handshakeMessage = parseHandshakeMessage(handshake)!;
 
-      session.setPort2(handshakeMessage.offset);
-      messageContext.attachSession(session);
+      this.setPort2(handshakeMessage.offset);
+      messageContext.attachSession(this);
 
-      // 再发送一条信息给到serve，以表示客户端准备好了
-      session.sendMessage({
+      this.sendMessage({
         fromId: response.id,
         data: sendHandshakeResponseMessage(response.data),
         type: EMessageType.RESPONSE,
       });
+      this._openedDefer.resolve();
     } catch (e) {
-      this.isConnecting = false;
+      this._openedDefer.reject(e);
       throw e;
     }
   }
 
   disconnect(): Promise<void> {
-    return Promise.resolve(undefined);
+    return this._closedDefer.promise;
   }
 }

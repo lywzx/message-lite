@@ -1,16 +1,14 @@
 import {
   EMessageType,
   IConnectSession,
-  IMessageBaseData,
   IMessageBroadcast,
   IMessageCallData,
   IMessageConfig,
   IMessageContext,
   IMessageEvent,
-  ISessionSendMessage,
 } from '../interfaces';
-import { createMessageEventName, messageHelper, throwException, uniqId } from '../util';
-import { Event } from './event';
+import { createMessageEventName, messageHelper, throwException } from '../util';
+import { EventEmitter } from './event-emitter';
 
 /**
  * some client try connect
@@ -22,43 +20,27 @@ export const WILL_CONNECT = 'client:will:connect';
  */
 export const WILL_DISCOUNT = 'client:will:disconnect';
 
-export class MessageContext extends Event implements IMessageContext {
+export class MessageContext extends EventEmitter implements IMessageContext {
   protected session: Map<string, IConnectSession>;
 
   protected isReady = false;
 
   protected t: (message: any) => any;
 
-  constructor(protected readonly option: IMessageConfig) {
+  constructor(protected readonly option: Omit<IMessageConfig, 'createSender'>) {
     super();
     this.session = new Map<string, IConnectSession>();
     this.t = option.transformMessage || ((m: any) => m);
   }
 
-  sendMessage<T extends ISessionSendMessage>(message: Pick<T, Exclude<keyof T, 'channel'>>): IMessageBaseData<any>;
-  sendMessage<T extends ISessionSendMessage>(
-    message: Pick<T, Exclude<keyof T, 'channel'>>,
-    channel: string
-  ): IMessageBaseData<any>;
-  sendMessage<T extends ISessionSendMessage>(
-    message: Pick<T, Exclude<keyof T, 'channel'>>,
-    session: IConnectSession
-  ): IMessageBaseData<any>;
-  sendMessage(message: any, session?: any) {
-    const { option } = this;
-    const mContent: IMessageBaseData = {
-      ...message,
-      id: message.id ?? uniqId(),
-      channel: '',
-    };
-
-    Promise.resolve().then(() => {
-      option.listenMessage(mContent);
-    });
-    return mContent;
+  stop(): void {
+    this.dispose();
+    this.session = null!;
+    this.isReady = false;
+    this.isReady = false;
+    this.option.unListenMessage(this.handMessage);
   }
 
-  stop(): void {}
   // 开始监听
   public start() {
     if (this.isReady) {
@@ -81,12 +63,6 @@ export class MessageContext extends Event implements IMessageContext {
       sess.delete(key);
       s.detachMessageContext();
     }
-  }
-
-  public dispose() {
-    super.dispose();
-    this.isReady = false;
-    this.option.unListenMessage(this.handMessage);
   }
 
   /**
@@ -113,7 +89,7 @@ export class MessageContext extends Event implements IMessageContext {
       switch (type) {
         case EMessageType.HANDSHAKE: {
           // 建立连接
-          this.emit(WILL_CONNECT, originMessage);
+          this.emit(WILL_CONNECT, message, originMessage);
           break;
         }
         case EMessageType.GOOD_BYE: {

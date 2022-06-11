@@ -1,25 +1,10 @@
-import {
-  EMessageType,
-  IConnectSession,
-  IMasterServerConfig,
-  IMessageBaseData,
-  IMessageHandshakeData,
-} from './interfaces';
+import { IConnectSession, IMessageConfig, IMessageHandshakeData } from './interfaces';
 import { Class } from './types';
-import { BasicServer, WILL_CONNECT, WILL_DISCOUNT, MasterClient } from './libs';
-import {
-  checkReceiveIsMatchInitMessage,
-  createMasterService,
-  EHandshakeMessageType,
-  parseHandshakeMessage,
-  sendHandshakeResponseMessage,
-  throwException,
-  parsePort,
-} from './util';
-import { CONNECTED, CONNECTED_FAILED } from './constant';
+import { BasicServer, WILL_CONNECT, WILL_DISCOUNT, MasterClient, EventEmitter } from './libs';
+import { createMasterService, EHandshakeMessageType, parseHandshakeMessage, throwException, parsePort } from './util';
 
 export class Master extends BasicServer {
-  constructor(protected readonly option: IMasterServerConfig) {
+  constructor(protected readonly option: IMessageConfig) {
     super(option);
   }
 
@@ -31,46 +16,24 @@ export class Master extends BasicServer {
     return createMasterService(this.messageContext, serv);
   }
 
-  protected whenNewClientConnected = async (message: any) => {
-    const { option, messageContext } = this;
-    const connectMessage = (
-      option.transformMessage ? option.transformMessage(message) : message
-    ) as IMessageHandshakeData;
-    const { channel, data } = connectMessage;
+  protected whenNewClientConnected = async (message: IMessageHandshakeData, originMessage: any) => {
+    const { messageContext, option } = this;
+
+    const { channel, data } = message;
     const parsedHandshake = parseHandshakeMessage(data);
     if (!parsedHandshake || parsedHandshake.type !== EHandshakeMessageType.INIT) {
       return;
     }
     const info = parsePort(channel);
-    const handshakeResponseMessage = sendHandshakeResponseMessage(data);
-    const handshakeResponseMessageObj = parseHandshakeMessage(handshakeResponseMessage);
-    const session = new MasterClient(info.name, this.option.createMasterSender(message));
-    session.setPort1(handshakeResponseMessageObj!.offset);
-    session.setPort2(info.port1);
+    const session = new MasterClient(info.name, new EventEmitter());
+    session.initSender(option.createSender(originMessage));
 
-    // 响应握手信息
-    const sendMessage = session.sendMessage({
-      type: EMessageType.HANDSHAKE,
-      data: handshakeResponseMessage,
+    return session.connect({
+      message: data,
+      remotePort: info.port1,
+      messageContext,
+      lifeCircleEvent: this,
     });
-
-    messageContext.attachSession(session);
-
-    session
-      .waitMessageResponse(sendMessage, {
-        timeout: 30000,
-        validate(message: IMessageBaseData<string>) {
-          return checkReceiveIsMatchInitMessage(handshakeResponseMessage, message.data!);
-        },
-      })
-      .then(() => {
-        session.ready();
-        this.emit(CONNECTED, session);
-      })
-      .catch(() => {
-        messageContext.detachSession(session);
-        this.emit(CONNECTED_FAILED, session);
-      });
   };
 
   protected whenClientWillDisConnected = (message: any) => {

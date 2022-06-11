@@ -2,7 +2,7 @@ import { Master } from 'message-lite';
 import { ALL_SERVICE } from '../core/impl';
 
 export const master = new Master({
-  createMasterSender(event: MessageEvent) {
+  createSender(event: MessageEvent) {
     return (message: any) => {
       (event.source as WindowProxy)!.postMessage(message, '*', []);
     };

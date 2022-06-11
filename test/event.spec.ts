@@ -1,17 +1,17 @@
 import { test } from 'mocha';
 import { expect } from 'chai';
-import { Event, EventOff, EventOffAll, EventOn } from '../src/libs';
+import { EventEmitter, EventOff, EventOffAll, EventOn } from '../src/libs';
 import { fake } from 'sinon';
 
 describe('#event test impl', () => {
   const eventName = 'testEventName';
 
   test('test event constructor', () => {
-    expect(new Event()).to.be.instanceof(Event);
+    expect(new EventEmitter()).to.be.instanceof(EventEmitter);
   });
 
   test('test event on is trigger when emit', () => {
-    const evt = new Event();
+    const evt = new EventEmitter();
     const fn = fake();
     evt.on(eventName, fn);
 
@@ -24,7 +24,7 @@ describe('#event test impl', () => {
   });
 
   test('test fn on twice, only trigger once', () => {
-    const evt = new Event();
+    const evt = new EventEmitter();
     const fn = fake();
     evt.on(eventName, fn);
     evt.on(eventName, fn);
@@ -34,7 +34,7 @@ describe('#event test impl', () => {
   });
 
   test('test fn on and once, will trigger twice', () => {
-    const evt = new Event();
+    const evt = new EventEmitter();
     const fn = fake();
     evt.on(eventName, fn);
     evt.once(eventName, fn);
@@ -45,7 +45,7 @@ describe('#event test impl', () => {
   });
 
   test('test event once should call once when emit many times', () => {
-    const evt = new Event();
+    const evt = new EventEmitter();
     const fn = fake();
     evt.once(eventName, fn);
 
@@ -62,7 +62,7 @@ describe('#event test impl', () => {
   });
 
   test('test event should correct trigger event', () => {
-    const evt = new Event();
+    const evt = new EventEmitter();
     const fn = fake();
     const fn1 = fake();
     const evtName = 'fn';
@@ -78,7 +78,7 @@ describe('#event test impl', () => {
   });
 
   test('test event off will work', () => {
-    const evt = new Event();
+    const evt = new EventEmitter();
     const fn = fake();
     evt.on(eventName, fn);
 
@@ -91,7 +91,7 @@ describe('#event test impl', () => {
   });
 
   test('test event off assign fn will work', () => {
-    const evt = new Event();
+    const evt = new EventEmitter();
     const fn1 = fake();
     const fn2 = fake();
     evt.on(eventName, fn1);
@@ -108,7 +108,7 @@ describe('#event test impl', () => {
 
   test('test event off when once or on', () => {
     const fn1 = fake();
-    const evt = new Event();
+    const evt = new EventEmitter();
     evt.on(eventName, fn1);
     evt.once(eventName, fn1);
     evt.emit(eventName, 1);
@@ -130,7 +130,7 @@ describe('#event test impl', () => {
   });
 
   test('test event many fn, will trigger', () => {
-    const evt = new Event();
+    const evt = new EventEmitter();
     const times = Array.from({
       length: 10,
     }).map(() => {
@@ -150,7 +150,7 @@ describe('#event test impl', () => {
   });
 
   test('test event dispose will reset', () => {
-    const evt = new Event();
+    const evt = new EventEmitter();
     const fn1 = fake();
     evt.on(eventName, fn1);
     evt.dispose();
@@ -159,7 +159,7 @@ describe('#event test impl', () => {
   });
 
   test('test event on event will correct trigger', () => {
-    const evt = new Event();
+    const evt = new EventEmitter();
     const fn = fake();
     const fn1 = fake();
     let listener = 0;

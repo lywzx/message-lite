@@ -1,5 +1,5 @@
 import { IMessageBaseData, IMessageEvent } from './message-data';
-import { IMessageContext } from './message-context';
+import { IMessageContext, IWaitMessageResponseOption } from './message-context';
 import { MBaseService } from '../service';
 import { Class } from '../types';
 
@@ -10,11 +10,14 @@ export interface ISessionSendMessage extends Omit<IMessageBaseData, 'id' | 'chan
   id?: number;
 }
 
+export interface ITimeout {
+  timeout?: number;
+}
+
 /**
  * 响应
  */
-export interface IConnectSessionWaitResponseOption {
-  timeout?: number;
+export interface IConnectSessionWaitResponseOption extends ITimeout {
   validate?: (value: any) => boolean;
 }
 
@@ -25,11 +28,11 @@ export interface IConnectSession {
   /**
    * 连接成功
    */
-  opened: Promise<void>;
+  readonly opened: Promise<void>;
   /**
    * 关闭连接
    */
-  closed: Promise<void>;
+  readonly closed: Promise<void>;
 
   /**
    * 自身端口
@@ -47,7 +50,7 @@ export interface IConnectSession {
   /**
    * 开始连接
    */
-  connect(): Promise<void>;
+  connect(option: ITimeout): Promise<void>;
 
   /**
    * session 状态初始化完成
@@ -86,14 +89,33 @@ export interface IConnectSession {
   receiveMessage(message: ISessionSendMessage): void;
 
   /**
-   * 等待消息的响应数据
+   * 初始化sender
+   * @throws
+   */
+  initSender(sender: (s: any) => any): void;
+
+  /**
+   * 发送消息
+   * @param message
+   */
+  sendMessage<T extends ISessionSendMessage>(message: Omit<T, 'channel'>): IMessageBaseData<T>;
+
+  /**
+   * 等待消息的响应
    * @param message
    * @param option
    */
-  waitMessageResponse(
+  waitMessageResponse<T extends ISessionSendMessage>(message: T, option: IWaitMessageResponseOption): Promise<T>;
+
+  /**
+   * 发送消息并等待响应
+   * @param message
+   * @param option
+   */
+  sendMessageWithResponse<T extends ISessionSendMessage>(
     message: ISessionSendMessage,
-    option: IConnectSessionWaitResponseOption
-  ): Promise<IMessageBaseData>;
+    option?: IWaitMessageResponseOption
+  ): Promise<IMessageBaseData<T>>;
 
   /**
    * 添加某个服务监听

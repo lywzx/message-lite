@@ -8,6 +8,7 @@ import {
   IMessageCallData,
   IMessageContext,
   IMessageEvent,
+  ISessionSendMessage,
 } from '../interfaces';
 import { MBaseService } from '../service';
 import { createMessageEventName } from './message-helper';
@@ -44,7 +45,7 @@ export function createSlaveService<T extends MBaseService>(
         method,
         data,
       };
-      const message = session.sendMessage(callData) as IMessageCallData;
+      const message = session.sendMessage(callData) as ISessionSendMessage;
       if (option.notify) {
         return Promise.resolve();
       } else {

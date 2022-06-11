@@ -3,8 +3,8 @@ import { AlertService } from '@example/first-children-decl';
 import { AlertServiceImpl } from '../core/impl/alert.service.impl';
 
 export const slave = new Slave({
-  sendMessage(message: any) {
-    window.parent!.postMessage(message, '*', []);
+  createSender() {
+    return (message: any) => window.parent!.postMessage(message, '*', []);
   },
   listenMessage(fn) {
     window.addEventListener(

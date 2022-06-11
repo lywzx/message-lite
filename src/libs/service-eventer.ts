@@ -1,11 +1,11 @@
 import { IEventer, IServiceEventerOption } from '../interfaces';
-import { Event, EventOff, EventOn } from './event';
+import { EventEmitter, EventOff, EventOn } from './event-emitter';
 import { throwException } from '../util';
 
 export const ServiceEventerInnerEmit = Symbol('service-eventer-inner-emit');
 
 export class ServiceEventer<T = any> implements IEventer<T> {
-  protected event: Event;
+  protected event: EventEmitter;
 
   protected listened = 0;
 
@@ -15,7 +15,7 @@ export class ServiceEventer<T = any> implements IEventer<T> {
 
   constructor(protected readonly option: IServiceEventerOption) {
     const { eventName } = option;
-    const event = (this.event = new Event());
+    const event = (this.event = new EventEmitter());
     if (!eventName) {
       throwException('event name can not be empty!');
     }

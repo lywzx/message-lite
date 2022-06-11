@@ -34,6 +34,26 @@ export enum EMessageType {
 }
 
 /**
+ * 消息附带ID
+ */
+export interface IMessageDataWithId {
+  /**
+   * message id
+   */
+  id: number;
+}
+
+/**
+ * 消息响应
+ */
+export interface IMessageDataWithResponse {
+  /**
+   * 消息的响应
+   */
+  from_id: number;
+}
+
+/**
  * 基础消息
  */
 export interface IMessageBaseData<T = any> {

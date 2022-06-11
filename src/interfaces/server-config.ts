@@ -12,7 +12,7 @@ export interface IMessageConfig<T extends (message: any) => void = (message: any
   /**
    * create message sender
    */
-  createSender(origin: any): (message: any) => void;
+  createSender(origin?: any): (message: any) => void;
 }
 /**
  * add service config
