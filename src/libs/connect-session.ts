@@ -148,19 +148,13 @@ export abstract class ConnectSession implements IConnectSession {
       timeout,
       validate: (data: IMessageBaseData) =>
         [EMessageType.RESPONSE, EMessageType.RESPONSE_EXCEPTION].includes(data.type),
-    }).then((data) => {
-      if (data.type === EMessageType.RESPONSE) {
-        return data.data;
-      } else if (data.type === EMessageType.RESPONSE_EXCEPTION) {
-        throwException(data.data!);
-      }
     });
   }
 
   waitMessageResponse<T extends ISessionSendMessage>(
     message: Omit<T, 'channel'>,
     option: IWaitMessageResponseOption
-  ): Promise<T> {
+  ): Promise<any> {
     const { id } = message;
     const { eventer } = this;
     const { timeout, validate = () => true } = option;

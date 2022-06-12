@@ -9,6 +9,7 @@ import {
   IMessageContext,
   IMessageEvent,
   ISessionSendMessage,
+  ITimeout,
 } from '../interfaces';
 import { MBaseService } from '../service';
 import { createMessageEventName } from './message-helper';
@@ -33,7 +34,15 @@ export function createSlaveService<T extends MBaseService>(
   const { name: serviceName } = impl;
   // 处理所有的API
   impl.apis.forEach((api) => {
-    const method = api.method;
+    const { method, notify } = api;
+    const callFn = notify
+      ? (callData: ISessionSendMessage, option?: any): Promise<void> => {
+          session.sendMessage(callData);
+          return Promise.resolve();
+        }
+      : (callData: ISessionSendMessage, option: ITimeout) => {
+          return session.sendMessageWithResponse(callData, option);
+        };
     (s as any)[method] = function (data: any, config: any = {}) {
       const option: IApiDeclFullApi = {
         ...api,
@@ -45,14 +54,7 @@ export function createSlaveService<T extends MBaseService>(
         method,
         data,
       };
-      const message = session.sendMessage(callData) as ISessionSendMessage;
-      if (option.notify) {
-        return Promise.resolve();
-      } else {
-        return session.waitMessageResponse(message, {
-          timeout: option.timeout,
-        });
-      }
+      return callFn(callData, option);
     };
   });
   // 处理所有的事件

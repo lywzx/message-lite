@@ -4,6 +4,8 @@ import { BasicServer, WILL_CONNECT, WILL_DISCOUNT, MasterClient, EventEmitter } 
 import { createMasterService, EHandshakeMessageType, parseHandshakeMessage, throwException, parsePort } from './util';
 
 export class Master extends BasicServer {
+  protected serviceMap = new Map();
+
   constructor(protected readonly option: IMessageConfig) {
     super(option);
   }
@@ -13,7 +15,12 @@ export class Master extends BasicServer {
     if (!this.started) {
       throwException('master not started, get service failed!');
     }
-    return createMasterService(this.messageContext, serv);
+    let service = this.serviceMap.get(serv);
+    if (!service) {
+      service = createMasterService(this.messageContext, serv);
+      this.serviceMap.set(serv, service);
+    }
+    return service!;
   }
 
   protected whenNewClientConnected = async (message: IMessageHandshakeData, originMessage: any) => {
@@ -54,13 +61,6 @@ export class Master extends BasicServer {
 
   async stop(): Promise<void> {
     this.started = false;
-    this.messageContext.dispose();
-  }
-
-  /**
-   * 关闭连接
-   */
-  async close(): Promise<void> {
     this.messageContext.dispose();
   }
 

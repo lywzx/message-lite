@@ -1,11 +1,14 @@
-import { ApiDecl, ApiDeclApi, ApiUnSupport, MBaseService } from '../../../src';
+import { ApiDecl, ApiDeclApi, ApiDeclEvent, ApiUnSupport, IEventer, MBaseService } from '../../../src';
 
 @ApiDecl({
   name: 'net.lyblog.app.test',
 })
 export class AppTestService extends MBaseService {
+  @ApiDeclEvent()
+  public event: IEventer;
+
   @ApiDeclApi()
-  currentTime(): Promise<number> {
+  currentTime(now?: number): Promise<number> {
     return ApiUnSupport();
   }
 
