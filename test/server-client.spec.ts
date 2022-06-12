@@ -7,6 +7,9 @@ import { fake } from 'sinon';
 import { CONNECTED } from '../dist';
 import { parsePort } from '../src/util';
 use(chaiAsPromised);
+import debug from 'debug';
+
+const log = debug('app:message');
 
 describe('#master-client', () => {
   test('#connecting test', async () => {
@@ -22,13 +25,13 @@ describe('#master-client', () => {
       fn1(data);
     });
 
-    /*commonEvent.on(slaveEventName, (...args) => {
-      console.log('slave-event-receive', ...args);
-    });*/
+    commonEvent.on(slaveEventName, (...args) => {
+      log('slave-event-receive', ...args);
+    });
 
-    /*commonEvent.on(masterEventName, (...args) => {
-      console.log('master-event-receive', ...args);
-    });*/
+    commonEvent.on(masterEventName, (...args) => {
+      log('master-event-receive', ...args);
+    });
 
     const slaveMessageContext = new MessageContext({
       listenMessage(fn: (message: any) => void): void {
