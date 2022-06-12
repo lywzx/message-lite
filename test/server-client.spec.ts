@@ -2,13 +2,13 @@ import { test } from 'mocha';
 import { expect } from 'chai';
 import './test-util/promise-chai';
 import { fake } from 'sinon';
-import { CONNECTED } from '../dist';
 import { createClient, createServe, GLOBAL_EVENT_NAME } from './test-util/message-client';
 import debug from 'debug';
 import { AppTestService } from './services/decl';
 import { AppTestImpl } from './services/impl';
 import { MasterClient } from '../src/libs';
 import { sleep } from './test-util/sleep';
+import { CONNECTED } from '../src';
 
 debug.enable('app:*');
 
