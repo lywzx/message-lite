@@ -131,7 +131,7 @@ export function addServices(services: Array<IAddService<any, any>>, messageConte
   services.forEach((it) => {
     const { impl, decl } = it;
     const info = getApiDeclInfo(decl);
-    const apiInstance = new impl();
+    let apiInstance: any;
     info.apis.forEach((api) => {
       const eventName = createMessageEventName({
         type: EMessageType.CALL,
@@ -140,6 +140,14 @@ export function addServices(services: Array<IAddService<any, any>>, messageConte
       });
       messageContext.on(eventName, async (data: IMessageCallData, option: { timeout?: number }) => {
         const session = messageContext.getSession(data.channel)!;
+
+        if (!apiInstance) {
+          if (MBaseService.isPrototypeOf(impl)) {
+            apiInstance = new (impl as Class<any>)();
+          } else {
+            apiInstance = (impl as (...args: any[]) => any)(messageContext);
+          }
+        }
 
         try {
           const df = createDefer(option?.timeout);

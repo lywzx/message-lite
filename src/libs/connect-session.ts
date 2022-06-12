@@ -176,7 +176,7 @@ export abstract class ConnectSession implements IConnectSession {
         }
       }
     };
-    console.log('maste waitmessage', 1111);
+
     eventer.once(eventId, listener);
 
     return promise.finally(() => {

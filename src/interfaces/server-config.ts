@@ -18,6 +18,6 @@ export interface IMessageConfig<T extends (message: any) => void = (message: any
  * add service config
  */
 export interface IAddService<T extends MBaseService = any, U extends T = any> {
-  impl: Class<U>;
+  impl: Class<U> | ((...args: any[]) => U);
   decl: Class<T>;
 }
