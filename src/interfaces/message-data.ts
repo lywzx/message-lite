@@ -3,6 +3,14 @@
  */
 export enum EMessageType {
   /**
+   * 握手协议
+   */
+  HANDSHAKE,
+  /**
+   * 分手协议
+   */
+  GOOD_BYE,
+  /**
    * 方法调用
    */
   CALL,
@@ -26,40 +34,71 @@ export enum EMessageType {
 }
 
 /**
- * 基础消息
+ * 消息附带ID
  */
-export interface IMessageBaseData {
+export interface IMessageDataWithId {
   /**
-   * 每条消息必附带内容
+   * message id
    */
-  channel: string;
-  type: EMessageType;
-  /**
-   * 消息数据
-   */
-  data?: any;
+  id: number;
 }
 
 /**
- * 调用消息后，响应数据
+ * 消息响应
  */
-export interface IMessageResponseData extends IMessageBaseData {
+export interface IMessageDataWithResponse {
+  /**
+   * 消息的响应
+   */
+  from_id: number;
+}
+
+/**
+ * 基础消息
+ */
+export interface IMessageBaseData<T = any> {
   /**
    * 消息ID
    */
   id: number;
   /**
+   * 每条消息必附带内容
+   */
+  channel: string;
+  /**
+   * 消息类型
+   */
+  type: EMessageType;
+  /**
+   * 消息数据
+   */
+  data?: T;
+}
+
+/**
+ * 握手通信协议
+ */
+export interface IMessageHandshakeData<T = string> extends Required<IMessageBaseData<T>> {
+  /**
+   * 建立连接/断开连接
+   */
+  type: EMessageType.HANDSHAKE | EMessageType.GOOD_BYE;
+}
+
+/**
+ * 调用消息后，响应数据
+ */
+export interface IMessageResponseData<T = any> extends Required<IMessageBaseData<T>> {
+  /**
    * 响应消息
    */
   type: EMessageType.RESPONSE | EMessageType.RESPONSE_EXCEPTION;
-  data: any;
 }
 
 /**
  * 方法调用或消息消息
  */
-export interface IMessageCallData extends IMessageBaseData {
-  id: number;
+export interface IMessageCallData<T = any[]> extends Required<IMessageBaseData<T>> {
   /**
    * 调用的服务名称
    */
@@ -72,16 +111,12 @@ export interface IMessageCallData extends IMessageBaseData {
    * 消息类型
    */
   type: EMessageType.CALL;
-  /**
-   * 调用消息内容
-   */
-  data: any[];
 }
 
 /**
  * 开始监听事件
  */
-export interface IMessageEvent extends IMessageBaseData {
+export interface IMessageEvent<T = any> extends IMessageBaseData<T> {
   /**
    * 服务名称
    */
@@ -90,5 +125,8 @@ export interface IMessageEvent extends IMessageBaseData {
    * 消息名称
    */
   event: string;
+  /**
+   * 事件相关消息
+   */
   type: EMessageType.EVENT_OFF | EMessageType.EVENT_ON | EMessageType.EVENT;
 }

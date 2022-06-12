@@ -1,34 +1,77 @@
-import { IEventer } from '../interfaces';
-import { Event } from './event';
+import { IEventer, IServiceEventerOption } from '../interfaces';
+import { EventEmitter, EventOff, EventOn } from './event-emitter';
+import { throwException } from '../util';
 
-export class ServiceEventer<T = any> implements IEventer {
-  protected event: Event;
+export const ServiceEventerInnerEmit = Symbol('service-eventer-inner-emit');
 
-  constructor(protected readonly eventName: string) {
-    this.event = new Event();
+export class ServiceEventer<T = any> implements IEventer<T> {
+  protected event: EventEmitter;
+
+  protected listened = 0;
+
+  public [ServiceEventerInnerEmit] = (...args: any[]) => {
+    this.event.emit(this.option.eventName, ...args);
+  };
+
+  constructor(protected readonly option: IServiceEventerOption) {
+    const { eventName } = option;
+    const event = (this.event = new EventEmitter());
     if (!eventName) {
-      throw new Error('event name can not be empty!');
+      throwException('event name can not be empty!');
     }
+    event.on(EventOn, this.whenEventOn);
+    event.on(EventOff, this.whenEventOff);
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected whenEventOn = (evtName: string, callback?: Function) => {
+    const { eventName, whenListened } = this.option;
+    if (eventName === evtName && whenListened) {
+      const listened = ++this.listened;
+      if (listened === 1) {
+        whenListened();
+      }
+    }
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected whenEventOff = (evtName: string, callback?: Function) => {
+    const { eventName, whenUnListened } = this.option;
+    if (eventName === evtName && whenUnListened) {
+      const listened = --this.listened;
+      if (!listened) {
+        whenUnListened();
+      }
+    }
+  };
+
   emit(data: T): void {
-    this.event.emit(this.eventName, data);
+    if (this.listened) {
+      this.event.emit(this.option.eventName, data);
+    }
   }
 
   on(fn: (data: T) => any) {
-    this.event.on(this.eventName, fn);
+    const { event, option } = this;
+    const eventName = option.eventName;
+    event.on(eventName, fn);
     return () => {
-      this.event.off(this.eventName, fn);
+      event.off(eventName, fn);
     };
   }
 
   once(fn: (data: T) => any) {
-    this.event.once(this.eventName, fn);
+    const { event, option } = this;
+    const eventName = option.eventName;
+    event.once(eventName, fn);
     return () => {
-      this.event.off(this.eventName, fn);
+      event.off(eventName, fn, true);
     };
   }
 
   dispose() {
+    // todo 需要确认一下，是否有必要调用whenUnListened方法
+    this.listened = 0;
     this.event.dispose();
   }
 }

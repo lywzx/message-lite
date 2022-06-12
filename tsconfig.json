@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "ES6",
     "module": "commonjs",
     "declaration": true,
     "declarationDir": "./dist/typings",
@@ -11,7 +11,7 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": false,
-    "lib": ["ES6"]
+    "lib": ["ES6", "DOM"]
   },
   "include": [
     "src/**/*",

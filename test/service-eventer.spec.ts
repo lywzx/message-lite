@@ -2,20 +2,31 @@ import { describe } from 'mocha';
 import { expect } from 'chai';
 import { ServiceEventer } from '../src/libs';
 import { fake } from 'sinon';
+import { noop } from 'lodash';
 
 describe('test service-eventer', function () {
   it('test service-enenter constructor ', function () {
-    expect(new ServiceEventer('test-event')).to.be.instanceof(ServiceEventer);
+    expect(
+      new ServiceEventer({
+        eventName: 'test-event',
+      })
+    ).to.be.instanceof(ServiceEventer);
   });
 
   it('should throw error when event name is empty', function () {
     expect(() => {
-      new ServiceEventer('');
+      new ServiceEventer({
+        eventName: '',
+      });
     }).to.be.throw();
   });
 
   it('should correct trigger', function () {
-    const evt = new ServiceEventer('evt');
+    const evt = new ServiceEventer({
+      eventName: 'test-evt',
+      whenListened: noop,
+      whenUnListened: noop,
+    });
     const fn1 = fake();
     const fn2 = fake();
     const fn3 = fake();

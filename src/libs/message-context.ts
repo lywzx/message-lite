@@ -1,104 +1,127 @@
-import { EMessageType, IMessageCallData, IMessageEvent, IMessageResponseData, IServerConfig } from '../interfaces';
-import { Class } from '../types';
-import { getApiDeclInfo, defer, IPromiseDefer, isValidateMessage } from '../util';
-import { BaseServer } from './base-server';
-import { BaseService } from './base-service';
-import { Event } from './event';
+import {
+  EMessageType,
+  IConnectSession,
+  IMessageBroadcast,
+  IMessageCallData,
+  IMessageConfig,
+  IMessageContext,
+  IMessageEvent,
+} from '../interfaces';
+import { createMessageEventName, messageHelper, throwException } from '../util';
+import { EventEmitter } from './event-emitter';
 
-export class MessageContext extends Event {
-  protected data: Map<any, any>;
+/**
+ * some client try connect
+ */
+export const WILL_CONNECT = 'client:will:connect';
 
-  protected pendingMap: Map<string, IPromiseDefer<any>>;
+/**
+ * some client will discount
+ */
+export const WILL_DISCOUNT = 'client:will:disconnect';
+
+export class MessageContext extends EventEmitter implements IMessageContext {
+  protected session: Map<string, IConnectSession>;
 
   protected isReady = false;
 
-  protected messageId = 0;
+  protected t: (message: any) => any;
 
-  protected channel = '';
-
-  constructor(protected readonly serv: BaseServer, protected readonly option: IServerConfig) {
+  constructor(protected readonly option: Omit<IMessageConfig, 'createSender'>) {
     super();
-    this.data = new Map();
-    this.pendingMap = new Map();
+    this.session = new Map<string, IConnectSession>();
+    this.t = option.transformMessage || ((m: any) => m);
+  }
+
+  stop(): void {
+    this.dispose();
+    this.session = null!;
+    this.isReady = false;
+    this.isReady = false;
+    this.option.unListenMessage(this.handMessage);
   }
 
   // 开始监听
   public start() {
     if (this.isReady) {
-      throw new Error('message has ready!');
+      throwException('message has ready!');
     }
+    this.isReady = true;
     this.option.listenMessage(this.handMessage);
   }
 
-  public setChannel(channel: string) {
-    this.channel = channel;
+  public attachSession(session: IConnectSession) {
+    session.attachMessageContext(this);
+    this.session.set(session.getReceiverPort(), session);
   }
 
-  public readied() {
-    this.isReady = true;
-  }
-
-  public dispose() {
-    super.dispose();
-    this.isReady = false;
-    this.option.unListenMessage(this.handMessage);
-  }
-
-  public whenServiceCalled<T extends BaseService>(
-    serv: Class<T>,
-    option: {
-      method: string;
-      once?: boolean;
-      timeout?: number;
+  public detachSession(session: IConnectSession | string) {
+    const key = typeof session === 'string' ? session : session.getReceiverPort();
+    const sess = this.session;
+    if (sess.has(key)) {
+      const s = sess.get(key)!;
+      sess.delete(key);
+      s.detachMessageContext();
     }
-  ) {
-    const servInfo = getApiDeclInfo(serv);
-    const df = defer<any>(option.timeout);
-
-    const fn = (data: any) => {
-      df.resolve(data);
-    };
-    const eventName = `${servInfo.name}:${option.method}:call`;
-    this.once(eventName, fn);
-
-    df.promise.finally(() => {
-      this.off(eventName, fn);
-    });
-
-    return df.promise;
   }
 
-  private handMessage = (message: any) => {
-    if (isValidateMessage(message) && this.channel === message.channel) {
-      switch (message.type) {
+  /**
+   * receive message hand method
+   * @param originMessage
+   */
+  private handMessage = (originMessage: any) => {
+    const message = this.t(originMessage);
+
+    if (messageHelper(message)) {
+      // 连接类消息
+      const { channel, type } = message;
+      const session = this.session.get(channel);
+      /*if (!session) {
+        if (type === EMessageType.CALL && (message as IMessageCallData).service === CONST_SERVICE_NAME) {
+          if ((message as IMessageCallData).method === 'connect') {
+            isHandshakeMessage(data) && this.emit(WILL_CONNECT, message, originMessage);
+          } else {
+            this.emit(WILL_DISCOUNT, message, originMessage);
+          }
+        }
+        return;
+      }*/
+      switch (type) {
+        case EMessageType.HANDSHAKE: {
+          // 建立连接
+          this.emit(WILL_CONNECT, message, originMessage);
+          break;
+        }
+        case EMessageType.GOOD_BYE: {
+          // 断开连接
+          this.emit(WILL_DISCOUNT, message);
+          break;
+        }
         case EMessageType.EVENT_ON: {
-          const data = message as IMessageEvent;
-          this.emit(`${data.service}:${data.event}:on`);
+          if (session) {
+            session.addServiceListener(message as IMessageEvent);
+          }
           break;
         }
         case EMessageType.EVENT_OFF: {
-          const data = message as IMessageEvent;
-          this.emit(`${data.service}:${data.event}:off`);
+          if (session) {
+            session.removeServiceListener(message as IMessageEvent);
+          }
           break;
         }
-        case EMessageType.EVENT: {
-          const data = message as IMessageEvent;
-          this.emit(`${data.service}:${data.event}:emit`, data);
-          break;
-        }
+
         case EMessageType.CALL: {
-          const data = message as IMessageCallData;
-          this.emit(`${data.service}:${data.method}:call`, data);
+          if (session /*&& session.isReady*/) {
+            const eventName = createMessageEventName(message as IMessageEvent | IMessageCallData);
+            this.emit(eventName, message, session);
+          }
           break;
         }
+        case EMessageType.EVENT:
         case EMessageType.RESPONSE_EXCEPTION:
         case EMessageType.RESPONSE: {
-          const data = message as IMessageResponseData;
-          const pendingMap = this.pendingMap;
-          const key = `${this.channel}-${data.id}`;
-          if (pendingMap.has(key)) {
-            const df = pendingMap.get(key)!;
-            data.type === EMessageType.RESPONSE_EXCEPTION ? df.reject(new Error(data.data)) : df.resolve(data.data);
+          if (session) {
+            session.receiveMessage(message);
           }
           break;
         }
@@ -106,43 +129,26 @@ export class MessageContext extends Event {
     }
   };
 
-  async sendMessageWithOutResponse(
-    message:
-      | (Omit<IMessageCallData, 'channel' | 'id'> & { id?: number })
-      | (Omit<IMessageResponseData, 'channel' | 'id'> & { id?: number })
-  ) {
-    this.option.sendMessage({
-      ...message,
-      id: message.id ? message.id : ++this.messageId,
-      channel: this.channel,
+  /**
+   * 事件广播
+   */
+  public broadcast(message: IMessageBroadcast) {
+    this.getSession().forEach((session) => {
+      if (session.listened(message)) {
+        session.sendMessage({
+          ...message,
+          type: EMessageType.EVENT,
+        });
+      }
     });
   }
 
-  async sendMessageWithResponse(
-    message: Omit<IMessageCallData, 'channel' | 'id'> | Omit<IMessageResponseData, 'channel' | 'id'>,
-    option: {
-      timeout?: number;
+  public getSession(): Map<string, IConnectSession>;
+  public getSession(channel: string): IConnectSession | undefined;
+  public getSession(channel?: string): Map<string, IConnectSession> | IConnectSession | undefined {
+    if (channel) {
+      return this.session.get(channel);
     }
-  ) {
-    const m = {
-      id: ++this.messageId,
-      channel: this.channel,
-      ...message,
-    };
-    const df = defer(option.timeout);
-
-    this.option.sendMessage(m);
-
-    const pendingId = `${this.channel}-${this.messageId}`;
-    if (this.pendingMap.has(pendingId)) {
-      throw new Error('message has exists!');
-    } else {
-      this.pendingMap.set(`${this.channel}-${this.messageId}`, df);
-      df.promise.finally(() => {
-        this.pendingMap.delete(pendingId);
-      });
-    }
-
-    return df.promise;
+    return this.session as Map<string, IConnectSession>;
   }
 }

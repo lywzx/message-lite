@@ -1,51 +1,54 @@
-import { ConnectService } from './connect/decl/connect.service';
 import { Class } from './types';
-import { createSlaveService } from './util';
-import { BaseServer, BaseService } from './libs';
-import { IOpeningOption } from './Master';
+import { throwException } from './util';
+import { BasicServer, ConnectSession, SlaveClient, EventEmitter } from './libs';
+import { IMessageConfig, ITimeout } from './interfaces';
+import { MBaseService } from './service';
 
-export class Slave extends BaseServer {
-  protected serviceMap = new Map<Class<any>, BaseService>();
+export interface IConnectOption extends ITimeout {
+  name?: string;
+}
+
+export class Slave extends BasicServer {
+  protected isConnecting = false;
+
+  protected session!: ConnectSession;
+
+  constructor(protected readonly option: IMessageConfig) {
+    super(option);
+  }
 
   /**
    * 主动连接Master
    */
-  async connect(option: IOpeningOption): Promise<void> {
-    try {
-      const service = createSlaveService(this.messageContext, ConnectService);
-      this.messageContext.start();
-      this.messageContext.setChannel(option.clientId);
-      const result = await service.connect(option.clientId, {
-        timeout: option.timeout,
-      });
-      this.messageContext.setChannel(result);
-      this.messageContext.readied();
-      this._openedDefer.resolve();
-    } catch (e) {
-      this._openedDefer.reject(e);
+  connect(option: IConnectOption = {}): Promise<void> {
+    if (this.isConnecting) {
+      throwException('client is connecting server, please not call twice!');
     }
+    this.isConnecting = true;
+    const session = (this.session = new SlaveClient(option.name, new EventEmitter()));
+    session.initSender(this.option.createSender());
+    return session
+      .connect({
+        timeout: option.timeout,
+        messageContext: this.messageContext,
+      })
+      .finally(() => {
+        this.isConnecting = false;
+      });
   }
 
   /**
    * 断开连接
    */
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  async disconnect(): Promise<void> {}
-
-  getRemoteService<T>(serv: Class<T>): T | undefined {
-    return undefined;
+  disconnect(): Promise<void> {
+    return this.session.disconnect();
   }
 
-  getService<T>(serv: Class<T>): T | undefined {
-    if (this.serviceMap.has(serv)) {
-      return this.serviceMap.get(serv)! as T;
-    }
-    const service = createSlaveService(this.messageContext, serv);
-    this.serviceMap.set(serv, service);
-    return service;
-  }
-
-  isMaster(): boolean {
-    return false;
+  /**
+   * call service
+   * @param serv
+   */
+  getService<T extends MBaseService>(serv: Class<T>): T | undefined {
+    return this.session.getService(serv);
   }
 }

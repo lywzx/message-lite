@@ -1,6 +1,8 @@
+import { throwExceptionAsync } from './exception';
+
 /**
  * api decl un support
  */
-export function ApiUnSupport(): Promise<never> {
-  return Promise.reject(new Error('api is not impl!'));
+export function ApiUnSupport(): Promise<any> {
+  return throwExceptionAsync('api is not impl!');
 }

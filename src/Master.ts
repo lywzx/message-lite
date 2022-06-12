@@ -1,97 +1,79 @@
-import { ConnectService } from './connect/decl/connect.service';
-import { EMessageType, IMessageCallData, IServerConfig } from './interfaces';
+import { IConnectSession, IMessageConfig, IMessageHandshakeData } from './interfaces';
 import { Class } from './types';
-import { getApiDeclInfo, defer } from './util';
-import { BaseServer, BaseService } from './libs';
+import { BasicServer, WILL_CONNECT, WILL_DISCOUNT, MasterClient, EventEmitter } from './libs';
+import { createMasterService, EHandshakeMessageType, parseHandshakeMessage, throwException, parsePort } from './util';
 
-export interface IOpeningOption {
-  clientId: string;
-  timeout?: number;
-}
+export class Master extends BasicServer {
+  protected serviceMap = new Map();
 
-export interface IAddService<T extends BaseService, U extends T> {
-  impl: Class<U>;
-  decl: Class<T>;
-}
-
-export class Master extends BaseServer {
-  protected _skip!: boolean;
-
-  protected clientIndex = 1000;
-
-  constructor(option: IServerConfig) {
+  constructor(protected readonly option: IMessageConfig) {
     super(option);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getService<T>(serv: Class<T>): T | undefined {
-    throw new Error('api not available!');
+    if (!this.started) {
+      throwException('master not started, get service failed!');
+    }
+    let service = this.serviceMap.get(serv);
+    if (!service) {
+      service = createMasterService(this.messageContext, serv);
+      this.serviceMap.set(serv, service);
+    }
+    return service!;
   }
 
-  getRemoteService<T>(serv: Class<T>): T | undefined {
-    throw new Error('api not available!');
-  }
+  protected whenNewClientConnected = async (message: IMessageHandshakeData, originMessage: any) => {
+    const { messageContext, option } = this;
 
-  isMaster(): boolean {
-    return true;
-  }
-  /**
-   * 打开端口等待连接
-   */
-  async opening(option: IOpeningOption): Promise<void> {
-    this.messageContext.start();
-    this.messageContext.setChannel(option.clientId);
-    const res = (await this.messageContext.whenServiceCalled(ConnectService, {
-      method: 'connect',
-      timeout: option.timeout,
-    })) as IMessageCallData;
-    const assignClientIndex = ++this.clientIndex;
-    const channelId = `${option.clientId}:${assignClientIndex}`;
-    await this.messageContext.sendMessageWithOutResponse({
-      id: res.id,
-      type: EMessageType.RESPONSE,
-      data: channelId,
+    const { channel, data } = message;
+    const parsedHandshake = parseHandshakeMessage(data);
+    if (!parsedHandshake || parsedHandshake.type !== EHandshakeMessageType.INIT) {
+      return;
+    }
+    const info = parsePort(channel);
+    const session = new MasterClient(info.name, new EventEmitter());
+    session.initSender(option.createSender(originMessage));
+
+    return session.connect({
+      message: data,
+      remotePort: info.port1,
+      messageContext,
+      lifeCircleEvent: this,
     });
-    this.messageContext.setChannel(channelId);
-    this.messageContext.readied();
+  };
+
+  protected whenClientWillDisConnected = (message: any) => {
+    //
+    message = 1;
+  };
+
+  async start(): Promise<void> {
+    if (this.started) {
+      throwException('serve has been started!');
+    }
+    this.started = true;
+    const messageContext = this.messageContext;
+    messageContext.start();
+    messageContext.on(WILL_CONNECT, this.whenNewClientConnected);
+    messageContext.on(WILL_DISCOUNT, this.whenClientWillDisConnected);
   }
-  /**
-   * 关闭连接
-   */
-  async close(): Promise<void> {
+
+  async stop(): Promise<void> {
+    this.started = false;
     this.messageContext.dispose();
   }
-  /**
-   * 添加服务
-   */
-  addService(services: Array<IAddService<any, any>>) {
-    const messageContext = this.messageContext;
-    services.forEach((it) => {
-      const { impl, decl } = it;
-      const info = getApiDeclInfo(decl);
-      const apiInstance = new impl();
-      info.apis.forEach((api) => {
-        messageContext.on(
-          `${info.name}:${api.method}:call`,
-          async (data: IMessageCallData, option: { timeout?: number }) => {
-            try {
-              const df = defer(option?.timeout);
-              const result = await Promise.race([apiInstance[api.method](data.data), df.promise]);
-              await messageContext.sendMessageWithOutResponse({
-                id: data.id,
-                type: EMessageType.RESPONSE,
-                data: result,
-              });
-            } catch (e) {
-              const err = e as Error;
-              await messageContext.sendMessageWithOutResponse({
-                id: data.id,
-                type: EMessageType.RESPONSE_EXCEPTION,
-                data: err.stack || err.message,
-              });
-            }
-          }
-        );
-      });
-    });
+
+  public getSession(name?: string): Array<IConnectSession> {
+    if (!this.started) {
+      throwException('app not started');
+    }
+    const sessions = Array.from(this.messageContext.getSession()).map(([channel, session]) => session);
+
+    if (name) {
+      return sessions.filter((s) => s.getName() === name);
+    }
+
+    return sessions;
   }
 }
