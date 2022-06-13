@@ -1,5 +1,4 @@
 import {
-  EMessageType,
   IConnectSession,
   IMessageBroadcast,
   IMessageCallData,
@@ -9,6 +8,16 @@ import {
 } from '../interfaces';
 import { createMessageEventName, messageHelper, throwException } from '../util';
 import { EventEmitter } from './event-emitter';
+import {
+  EMessageTypeCall,
+  EMessageTypeEvent,
+  EMessageTypeEventOff,
+  EMessageTypeEventOn,
+  EMessageTypeGoodBye,
+  EMessageTypeHandshake,
+  EMessageTypeResponse,
+  EMessageTypeResponseException,
+} from '../constant';
 
 /**
  * some client try connect
@@ -87,39 +96,39 @@ export class MessageContext extends EventEmitter implements IMessageContext {
         return;
       }*/
       switch (type) {
-        case EMessageType.HANDSHAKE: {
+        case EMessageTypeHandshake: {
           // 建立连接
           this.emit(WILL_CONNECT, message, originMessage);
           break;
         }
-        case EMessageType.GOOD_BYE: {
+        case EMessageTypeGoodBye: {
           // 断开连接
           this.emit(WILL_DISCOUNT, message);
           break;
         }
-        case EMessageType.EVENT_ON: {
+        case EMessageTypeEventOn: {
           if (session) {
             session.addServiceListener(message as IMessageEvent);
           }
           break;
         }
-        case EMessageType.EVENT_OFF: {
+        case EMessageTypeEventOff: {
           if (session) {
             session.removeServiceListener(message as IMessageEvent);
           }
           break;
         }
 
-        case EMessageType.CALL: {
+        case EMessageTypeCall: {
           if (session /*&& session.isReady*/) {
             const eventName = createMessageEventName(message as IMessageEvent | IMessageCallData);
             this.emit(eventName, message, session);
           }
           break;
         }
-        case EMessageType.EVENT:
-        case EMessageType.RESPONSE_EXCEPTION:
-        case EMessageType.RESPONSE: {
+        case EMessageTypeEvent:
+        case EMessageTypeResponseException:
+        case EMessageTypeResponse: {
           if (session) {
             session.receiveMessage(message);
           }
@@ -137,7 +146,7 @@ export class MessageContext extends EventEmitter implements IMessageContext {
       if (session.listened(message)) {
         session.sendMessage({
           ...message,
-          type: EMessageType.EVENT,
+          type: EMessageTypeEvent,
         });
       }
     });

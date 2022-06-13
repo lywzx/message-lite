@@ -4,4 +4,4 @@ export * from './decorator';
 export * from './Master';
 export * from './Slave';
 export * from './service';
-export * from './constant';
+export * from './constant/index-export';

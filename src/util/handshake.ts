@@ -20,22 +20,24 @@ export function isHandshakeMessage(message: any): boolean {
   return false;
 }
 
-export enum EHandshakeMessageType {
-  /**
-   * init message
-   */
-  INIT,
-  /**
-   * response message
-   */
-  RES,
-}
+/**
+ * init message
+ */
+export const EHandshakeMessageTypeInit = 0x0;
 
+/**
+ * response message
+ */
+export const EHandshakeMessageTypeRes = 0x1;
+
+/**
+ * handshake message
+ */
 export interface IHandshakeMessage {
   /**
    * message type
    */
-  type: EHandshakeMessageType;
+  type: number;
   /**
    * base number
    */
@@ -54,7 +56,7 @@ export function parseHandshakeMessage(message: string): IHandshakeMessage | unde
   if (isHandshakeMessage(message)) {
     const value = message.match(handshakeMessage)!;
     return {
-      type: value[1] === '♨' ? EHandshakeMessageType.INIT : EHandshakeMessageType.RES,
+      type: value[1] === '♨' ? EHandshakeMessageTypeInit : EHandshakeMessageTypeRes,
       base: parseInt(value[2]),
       offset: parseInt(value[3]),
     };

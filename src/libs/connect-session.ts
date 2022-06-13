@@ -8,7 +8,6 @@ import {
 } from '../util';
 import { Class } from '../types';
 import {
-  EMessageType,
   IConnectSession,
   IEvent,
   IListenOption,
@@ -22,18 +21,9 @@ import {
 import { MBaseService } from '../service';
 import { uniqId, createPort } from '../util';
 import { ServiceEventer, ServiceEventerInnerEmit } from './service-eventer';
+import { EMessageTypeEvent, EMessageTypeResponse, EMessageTypeResponseException } from '../constant';
 
 export abstract class ConnectSession implements IConnectSession {
-  /**
-   * 断开连接
-   */
-  abstract disconnect(): Promise<void>;
-
-  /**
-   * 开始连接
-   */
-  abstract connect(option: ITimeout): Promise<void>;
-
   /**
    * wait session opened
    */
@@ -51,7 +41,7 @@ export abstract class ConnectSession implements IConnectSession {
   /**
    * 当前session是否处理ready状态
    */
-  public isReady = false;
+  protected isReady = false;
 
   /**
    * 建立连接时的defer对象
@@ -110,6 +100,19 @@ export abstract class ConnectSession implements IConnectSession {
   }
 
   /**
+   * 开始连接
+   */
+  abstract connect(option: ITimeout): Promise<void>;
+
+  /**
+   * 断开连接
+   * @param passive
+   */
+  public disconnect(passive = false): Promise<void> {
+    return Promise.reject();
+  }
+
+  /**
    * 初始化消息发布
    * @param sender
    */
@@ -124,11 +127,11 @@ export abstract class ConnectSession implements IConnectSession {
   public sendMessage<T extends ISessionSendMessage>(
     message: Pick<T, Exclude<keyof T, 'channel'>>
   ): IMessageBaseData<T> {
-    const { s } = this;
+    const { s, name, port1, port2 } = this;
     const mContent: IMessageBaseData = {
       ...message,
       id: message.id ?? uniqId(),
-      channel: this.getSenderPort(),
+      channel: createPort(name, port1, port2),
     };
 
     if (typeof s !== 'function') {
@@ -146,8 +149,7 @@ export abstract class ConnectSession implements IConnectSession {
 
     return this.waitMessageResponse(msg, {
       timeout,
-      validate: (data: IMessageBaseData) =>
-        [EMessageType.RESPONSE, EMessageType.RESPONSE_EXCEPTION].includes(data.type),
+      validate: (data: IMessageBaseData) => [EMessageTypeResponse, EMessageTypeResponseException].includes(data.type),
     });
   }
 
@@ -162,7 +164,7 @@ export abstract class ConnectSession implements IConnectSession {
     const eventId = `res:${id}`;
     const listener = (data: T) => {
       if (validate(data)) {
-        if (data.type === EMessageType.RESPONSE_EXCEPTION) {
+        if (data.type === EMessageTypeResponseException) {
           const error = new Error(data.data);
           reject(error);
         } else {
@@ -203,10 +205,6 @@ export abstract class ConnectSession implements IConnectSession {
     this._openedDefer.resolve();
   }
 
-  public getSenderPort() {
-    return createPort(this.name, this.port1, this.port2);
-  }
-
   public getReceiverPort() {
     return createPort(this.name, this.port2, this.port1);
   }
@@ -226,7 +224,7 @@ export abstract class ConnectSession implements IConnectSession {
   public receiveMessage(message: ISessionSendMessage) {
     const { eventer } = this;
     switch (message.type) {
-      case EMessageType.EVENT: {
+      case EMessageTypeEvent: {
         const m = message as IMessageEvent;
         eventer.emit(createMessageEventName(m, false), m.data);
         break;

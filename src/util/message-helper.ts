@@ -1,5 +1,15 @@
-import { EMessageType, IMessageBaseData } from '../interfaces';
-import { CONST_SERVICE_NAME } from '../constant';
+import { IMessageBaseData } from '../interfaces';
+import {
+  CONST_SERVICE_NAME,
+  EMessageTypeCall,
+  EMessageTypeEvent,
+  EMessageTypeEventOff,
+  EMessageTypeEventOn,
+  EMessageTypeGoodBye,
+  EMessageTypeHandshake,
+  EMessageTypeResponse,
+  EMessageTypeResponseException,
+} from '../constant';
 
 export function messageHelper(data: any): data is IMessageBaseData {
   return (
@@ -7,14 +17,14 @@ export function messageHelper(data: any): data is IMessageBaseData {
     typeof data === 'object' &&
     data.channel &&
     [
-      EMessageType.HANDSHAKE,
-      EMessageType.GOOD_BYE,
-      EMessageType.CALL,
-      EMessageType.RESPONSE,
-      EMessageType.RESPONSE_EXCEPTION,
-      EMessageType.EVENT,
-      EMessageType.EVENT_ON,
-      EMessageType.EVENT_OFF,
+      EMessageTypeHandshake,
+      EMessageTypeGoodBye,
+      EMessageTypeCall,
+      EMessageTypeResponse,
+      EMessageTypeResponseException,
+      EMessageTypeEvent,
+      EMessageTypeEventOn,
+      EMessageTypeEventOff,
     ].includes(data.type)
   );
 }
@@ -26,7 +36,7 @@ export function messageHelper(data: any): data is IMessageBaseData {
  */
 export function createMessageEventName(
   message: {
-    type?: EMessageType;
+    type?: number;
     service: string;
     event?: string;
     method?: string;
@@ -36,11 +46,11 @@ export function createMessageEventName(
   const { type, service, event, method } = message;
   const eventName: string[] = [service, (event || method)!];
   if (withSubPrefix && type) {
-    if (type === EMessageType.EVENT_ON) {
+    if (type === EMessageTypeEventOn) {
       eventName.push('on');
-    } else if (type === EMessageType.EVENT_OFF) {
+    } else if (type === EMessageTypeEventOff) {
       eventName.push('off');
-    } else if (type === EMessageType.CALL) {
+    } else if (type === EMessageTypeCall) {
       if (service === CONST_SERVICE_NAME) {
         eventName.push('connect');
       }

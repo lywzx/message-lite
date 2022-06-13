@@ -1,37 +1,13 @@
-/**
- * 信息类型
- */
-export enum EMessageType {
-  /**
-   * 握手协议
-   */
-  HANDSHAKE,
-  /**
-   * 分手协议
-   */
-  GOOD_BYE,
-  /**
-   * 方法调用
-   */
-  CALL,
-  /**
-   * 方法响应
-   */
-  RESPONSE,
-  RESPONSE_EXCEPTION,
-  /**
-   * 事件
-   */
-  EVENT,
-  /**
-   * 监听消息
-   */
-  EVENT_ON,
-  /**
-   * 取消消息监听
-   */
-  EVENT_OFF,
-}
+import {
+  EMessageTypeCall,
+  EMessageTypeEvent,
+  EMessageTypeEventOff,
+  EMessageTypeEventOn,
+  EMessageTypeGoodBye,
+  EMessageTypeHandshake,
+  EMessageTypeResponse,
+  EMessageTypeResponseException,
+} from '../constant';
 
 /**
  * 消息附带ID
@@ -68,7 +44,7 @@ export interface IMessageBaseData<T = any> {
   /**
    * 消息类型
    */
-  type: EMessageType;
+  type: number;
   /**
    * 消息数据
    */
@@ -82,7 +58,7 @@ export interface IMessageHandshakeData<T = string> extends Required<IMessageBase
   /**
    * 建立连接/断开连接
    */
-  type: EMessageType.HANDSHAKE | EMessageType.GOOD_BYE;
+  type: typeof EMessageTypeHandshake | typeof EMessageTypeGoodBye;
 }
 
 /**
@@ -92,7 +68,7 @@ export interface IMessageResponseData<T = any> extends Required<IMessageBaseData
   /**
    * 响应消息
    */
-  type: EMessageType.RESPONSE | EMessageType.RESPONSE_EXCEPTION;
+  type: typeof EMessageTypeResponse | typeof EMessageTypeResponseException;
 }
 
 /**
@@ -110,7 +86,7 @@ export interface IMessageCallData<T = any[]> extends Required<IMessageBaseData<T
   /**
    * 消息类型
    */
-  type: EMessageType.CALL;
+  type: typeof EMessageTypeCall;
 }
 
 /**
@@ -128,5 +104,5 @@ export interface IMessageEvent<T = any> extends IMessageBaseData<T> {
   /**
    * 事件相关消息
    */
-  type: EMessageType.EVENT_OFF | EMessageType.EVENT_ON | EMessageType.EVENT;
+  type: typeof EMessageTypeEventOff | typeof EMessageTypeEventOn | typeof EMessageTypeEvent;
 }

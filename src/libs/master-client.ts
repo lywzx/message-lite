@@ -1,7 +1,7 @@
 import { ConnectSession } from './connect-session';
-import { EMessageType, IEvent, IMessageBaseData, IMessageContext, ITimeout } from '../interfaces';
+import { IEvent, IMessageBaseData, IMessageContext, ITimeout } from '../interfaces';
 import { checkReceiveIsMatchInitMessage, parseHandshakeMessage, sendHandshakeResponseMessage } from '../util';
-import { CONNECTED, CONNECTED_FAILED } from '../constant';
+import { CONNECTED, CONNECTED_FAILED, EMessageTypeHandshake } from '../constant';
 
 export interface IMasterClientConnectOption extends ITimeout {
   /**
@@ -39,7 +39,7 @@ export class MasterClient extends ConnectSession {
     self.setPort2(remotePort);
 
     const sendMessage = self.sendMessage({
-      type: EMessageType.HANDSHAKE,
+      type: EMessageTypeHandshake,
       data: handshakeResponseMessage,
     });
 

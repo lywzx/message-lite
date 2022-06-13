@@ -58,11 +58,6 @@ export interface IConnectSession {
   ready(): Promise<void>;
 
   /**
-   * 获取发送端口
-   */
-  getSenderPort(): string;
-
-  /**
    * 获取接收端口
    */
   getReceiverPort(): string;

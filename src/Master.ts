@@ -1,7 +1,13 @@
 import { IConnectSession, IMessageConfig, IMessageHandshakeData } from './interfaces';
 import { Class } from './types';
 import { BasicServer, WILL_CONNECT, WILL_DISCOUNT, MasterClient, EventEmitter } from './libs';
-import { createMasterService, EHandshakeMessageType, parseHandshakeMessage, throwException, parsePort } from './util';
+import {
+  createMasterService,
+  EHandshakeMessageTypeInit,
+  parseHandshakeMessage,
+  throwException,
+  parsePort,
+} from './util';
 
 export class Master extends BasicServer {
   protected serviceMap = new Map();
@@ -28,7 +34,7 @@ export class Master extends BasicServer {
 
     const { channel, data } = message;
     const parsedHandshake = parseHandshakeMessage(data);
-    if (!parsedHandshake || parsedHandshake.type !== EHandshakeMessageType.INIT) {
+    if (!parsedHandshake || parsedHandshake.type !== EHandshakeMessageTypeInit) {
       return;
     }
     const info = parsePort(channel);

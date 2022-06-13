@@ -6,8 +6,9 @@ import {
   sendHandshakeResponseMessage,
   sendInitMessage,
 } from '../util';
-import { EMessageType, IMessageBaseData, IMessageContext, ITimeout } from '../interfaces';
+import { IMessageBaseData, IMessageContext, ITimeout } from '../interfaces';
 import { WILL_CONNECT } from './message-context';
+import { EMessageTypeHandshake, EMessageTypeResponse } from '../constant';
 
 export interface ISlaveClientConnectOption extends ITimeout {
   messageContext: IMessageContext;
@@ -19,7 +20,7 @@ export class SlaveClient extends ConnectSession {
     const initMessage = sendInitMessage();
 
     this.sendMessage({
-      type: EMessageType.HANDSHAKE,
+      type: EMessageTypeHandshake,
       data: initMessage,
     });
     // 开始监听
@@ -52,7 +53,7 @@ export class SlaveClient extends ConnectSession {
       this.sendMessage({
         fromId: response.id,
         data: sendHandshakeResponseMessage(response.data),
-        type: EMessageType.RESPONSE,
+        type: EMessageTypeResponse,
       });
       this._openedDefer.resolve();
     } catch (e) {
