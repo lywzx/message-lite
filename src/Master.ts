@@ -1,6 +1,6 @@
 import { IConnectSession, IMessageConfig, IMessageHandshakeData } from './interfaces';
 import { Class } from './types';
-import { BasicServer, WILL_CONNECT, WILL_DISCOUNT, MasterClient, EventEmitter } from './libs';
+import { BasicServer, WILL_CONNECT, MasterClient, EventEmitter } from './libs';
 import {
   createMasterService,
   EHandshakeMessageTypeInit,
@@ -49,11 +49,6 @@ export class Master extends BasicServer {
     });
   };
 
-  protected whenClientWillDisConnected = (message: any) => {
-    //
-    message = 1;
-  };
-
   async start(): Promise<void> {
     if (this.started) {
       throwException('serve has been started!');
@@ -62,7 +57,6 @@ export class Master extends BasicServer {
     const messageContext = this.messageContext;
     messageContext.start();
     messageContext.on(WILL_CONNECT, this.whenNewClientConnected);
-    messageContext.on(WILL_DISCOUNT, this.whenClientWillDisConnected);
   }
 
   async stop(): Promise<void> {

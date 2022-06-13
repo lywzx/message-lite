@@ -5,6 +5,8 @@ import {
   getApiDeclInfo,
   IPromiseDefer,
   throwException,
+  sendInitMessage,
+  checkReceiveIsMatchInitMessage,
 } from '../util';
 import { Class } from '../types';
 import {
@@ -21,7 +23,16 @@ import {
 import { MBaseService } from '../service';
 import { uniqId, createPort } from '../util';
 import { ServiceEventer, ServiceEventerInnerEmit } from './service-eventer';
-import { EMessageTypeEvent, EMessageTypeResponse, EMessageTypeResponseException } from '../constant';
+import {
+  EMessageTypeEvent,
+  EMessageTypeGoodBye,
+  EMessageTypeResponse,
+  EMessageTypeResponseException,
+  ESessionStateClosingStart,
+  ESessionStateClosingWaitingSecondApprove,
+  ESessionStateInit,
+  ESessionStateReady,
+} from '../constant';
 
 export abstract class ConnectSession implements IConnectSession {
   /**
@@ -41,7 +52,7 @@ export abstract class ConnectSession implements IConnectSession {
   /**
    * 当前session是否处理ready状态
    */
-  protected isReady = false;
+  protected state = ESessionStateInit;
 
   /**
    * 建立连接时的defer对象
@@ -90,6 +101,12 @@ export abstract class ConnectSession implements IConnectSession {
   protected s!: (m: any) => any;
 
   /**
+   * 等待关闭的defer
+   * @protected
+   */
+  protected _closeWaitingDefer: IPromiseDefer<any>;
+
+  /**
    * @param name 客户端名称
    * @param eventer 事件代码
    */
@@ -100,16 +117,45 @@ export abstract class ConnectSession implements IConnectSession {
   }
 
   /**
+   * get client state
+   */
+  getState(): number {
+    return this.state;
+  }
+
+  /**
    * 开始连接
    */
   abstract connect(option: ITimeout): Promise<void>;
 
   /**
    * 断开连接
-   * @param passive
    */
-  public disconnect(passive = false): Promise<void> {
-    return Promise.reject();
+  public async disconnect(): Promise<void> {
+    const { state } = this;
+    if (![ESessionStateReady, ESessionStateClosingWaitingSecondApprove].includes(state)) {
+      throwException('client state is not correct, disconnect failed!');
+    }
+    if (state === ESessionStateReady) {
+      this.state = ESessionStateClosingStart;
+      const initMessage = sendInitMessage();
+
+      await this.sendMessageWithResponse(
+        {
+          type: EMessageTypeGoodBye,
+          data: initMessage,
+        },
+        {
+          validate(message) {
+            return message.type === EMessageTypeGoodBye && checkReceiveIsMatchInitMessage(initMessage, message.data);
+          },
+        }
+      );
+      this.state = ESessionStateClosingWaitingSecondApprove;
+      this._closeWaitingDefer = createDefer(1000);
+      return this._closeWaitingDefer.promise;
+    } else {
+    }
   }
 
   /**
@@ -178,15 +224,6 @@ export abstract class ConnectSession implements IConnectSession {
     return promise.finally(() => {
       eventer.off(eventId, listener, true);
     });
-  }
-
-  public async ready() {
-    this.isReady = true;
-    this._openedDefer.resolve();
-  }
-
-  public release() {
-    this._openedDefer.resolve();
   }
 
   /**

@@ -14,6 +14,7 @@ import {
   EMessageTypeEventOff,
   EMessageTypeEventOn,
   EMessageTypeGoodBye,
+  EMessageTypeGoodByeTwice,
   EMessageTypeHandshake,
   EMessageTypeResponse,
   EMessageTypeResponseException,
@@ -102,8 +103,10 @@ export class MessageContext extends EventEmitter implements IMessageContext {
           break;
         }
         case EMessageTypeGoodBye: {
-          // 断开连接
-          this.emit(WILL_DISCOUNT, message);
+          if (session) {
+            // 断开连接
+            this.emit(WILL_DISCOUNT, message, session);
+          }
           break;
         }
         case EMessageTypeEventOn: {
@@ -126,6 +129,7 @@ export class MessageContext extends EventEmitter implements IMessageContext {
           }
           break;
         }
+        case EMessageTypeGoodByeTwice:
         case EMessageTypeEvent:
         case EMessageTypeResponseException:
         case EMessageTypeResponse: {

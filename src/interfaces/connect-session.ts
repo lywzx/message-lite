@@ -55,7 +55,7 @@ export interface IConnectSession {
   /**
    * session 状态初始化完成
    */
-  ready(): Promise<void>;
+  getState(): number;
 
   /**
    * 获取接收端口

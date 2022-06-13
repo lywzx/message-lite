@@ -1,8 +1,9 @@
-import { IAddService, IMessageConfig, IMessageContext } from '../interfaces';
+import { IAddService, IConnectSession, IMessageConfig, IMessageContext } from '../interfaces';
 import { Class } from '../types';
-import { MessageContext } from './message-context';
+import { MessageContext, WILL_DISCOUNT } from './message-context';
 import { addServices } from '../util';
 import { EventEmitter } from './event-emitter';
+import { ESessionStateClosingWaitingSecondApprove } from '../constant';
 
 export abstract class BasicServer extends EventEmitter {
   protected messageContext: IMessageContext;
@@ -11,8 +12,20 @@ export abstract class BasicServer extends EventEmitter {
 
   protected constructor(option: IMessageConfig) {
     super();
-    this.messageContext = new MessageContext(option);
+    const messageContext = (this.messageContext = new MessageContext(option));
+    messageContext.on(WILL_DISCOUNT, this.whenClientWillDisConnected);
   }
+
+  /**
+   * 处理断开连接逻辑
+   * @param message
+   * @param session
+   */
+  private whenClientWillDisConnected = async (message: any, session: IConnectSession) => {
+    (session as any).state = ESessionStateClosingWaitingSecondApprove;
+
+    await session.disconnect();
+  };
 
   /**
    * 获取某个服务

@@ -5,10 +5,18 @@ import {
   parseHandshakeMessage,
   sendHandshakeResponseMessage,
   sendInitMessage,
+  throwException,
 } from '../util';
 import { IMessageBaseData, IMessageContext, ITimeout } from '../interfaces';
 import { WILL_CONNECT } from './message-context';
-import { EMessageTypeHandshake, EMessageTypeResponse } from '../constant';
+import {
+  EMessageTypeHandshake,
+  EMessageTypeResponse,
+  ESessionStateClosed,
+  ESessionStateInit,
+  ESessionStateOpening,
+  ESessionStateReady,
+} from '../constant';
 
 export interface ISlaveClientConnectOption extends ITimeout {
   messageContext: IMessageContext;
@@ -16,13 +24,21 @@ export interface ISlaveClientConnectOption extends ITimeout {
 
 export class SlaveClient extends ConnectSession {
   async connect(option: ISlaveClientConnectOption): Promise<void> {
+    const { state } = this;
+
+    if (![ESessionStateInit, ESessionStateClosed].includes(state)) {
+      throwException('client is active, can not connect!');
+    }
+
     const { messageContext, timeout = 3000 } = option;
     const initMessage = sendInitMessage();
 
+    this.state = ESessionStateOpening;
     this.sendMessage({
       type: EMessageTypeHandshake,
       data: initMessage,
     });
+
     // 开始监听
     messageContext.start();
     let waitConnect = (message: IMessageBaseData, messageOrigin: any) => {
@@ -56,13 +72,11 @@ export class SlaveClient extends ConnectSession {
         type: EMessageTypeResponse,
       });
       this._openedDefer.resolve();
+      this.state = ESessionStateReady;
     } catch (e) {
       this._openedDefer.reject(e);
+      this.state = ESessionStateClosed;
       throw e;
     }
-  }
-
-  disconnect(): Promise<void> {
-    return this._closedDefer.promise;
   }
 }
