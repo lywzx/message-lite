@@ -2,7 +2,8 @@ import { test } from 'mocha';
 import { expect } from 'chai';
 import {
   checkReceiveIsMatchInitMessage,
-  EHandshakeMessageType,
+  EHandshakeMessageTypeInit,
+  EHandshakeMessageTypeRes,
   isHandshakeMessage,
   parseHandshakeMessage,
   sendHandshakeResponseMessage,
@@ -37,12 +38,12 @@ describe('#handshake message test util', () => {
     const initMessage = sendInitMessage();
     const result = parseHandshakeMessage(initMessage)!;
     expect(result).to.be.a('object');
-    expect(result.type).to.be.eq(EHandshakeMessageType.INIT);
+    expect(result.type).to.be.eq(EHandshakeMessageTypeInit);
     expect(result.base).to.be.an('number');
     expect(result.offset).to.be.an('number');
     const responseMessage = sendHandshakeResponseMessage(initMessage);
     const responseMessageResult = parseHandshakeMessage(responseMessage)!;
-    expect(responseMessageResult.type).to.be.eq(EHandshakeMessageType.RES);
+    expect(responseMessageResult.type).to.be.eq(EHandshakeMessageTypeRes);
     expect(responseMessageResult.base).to.be.an('number');
     expect(responseMessageResult.offset).to.be.an('number');
   });
