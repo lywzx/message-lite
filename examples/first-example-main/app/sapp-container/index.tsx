@@ -13,8 +13,8 @@ export function SappContainer(props: ISappContainerProps) {
 
   const exit = () => {
     const sessions = master.getSession(props.app.id);
-    sessions.map((s) => {
-      return s.disconnect();
+    sessions.map(async (s) => {
+      await s.disconnect();
     });
   };
 

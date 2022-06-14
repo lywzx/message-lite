@@ -10,7 +10,6 @@ import {
   ISessionSendMessage,
   ITimeout,
 } from '../interfaces';
-import { MBaseService } from '../service';
 import { createMessageEventName } from './message-helper';
 import { throwException } from './exception';
 import { createDefer } from './createDefer';
@@ -21,6 +20,7 @@ import {
   EMessageTypeResponse,
   EMessageTypeResponseException,
 } from '../constant';
+import { MBaseService } from '../service/m-base-service';
 
 /**
  * 获取调用服务

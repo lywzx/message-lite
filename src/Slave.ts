@@ -2,7 +2,7 @@ import { Class } from './types';
 import { throwException } from './util';
 import { BasicServer, ConnectSession, SlaveClient, EventEmitter } from './libs';
 import { IMessageConfig, ITimeout } from './interfaces';
-import { MBaseService } from './service';
+import { MBaseService } from './service/m-base-service';
 
 export interface IConnectOption extends ITimeout {
   name?: string;

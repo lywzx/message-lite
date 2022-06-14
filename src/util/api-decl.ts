@@ -1,6 +1,6 @@
 import { Class } from '../types';
-import { MBaseService } from '../service';
 import { throwException } from './exception';
+import { MBaseService } from '../service/m-base-service';
 
 export interface IApiDeclFullOption {
   name: string;

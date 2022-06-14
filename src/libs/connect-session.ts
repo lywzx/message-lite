@@ -5,8 +5,6 @@ import {
   getApiDeclInfo,
   IPromiseDefer,
   throwException,
-  sendInitMessage,
-  checkReceiveIsMatchInitMessage,
 } from '../util';
 import { Class } from '../types';
 import {
@@ -20,19 +18,18 @@ import {
   ITimeout,
   IWaitMessageResponseOption,
 } from '../interfaces';
-import { MBaseService } from '../service';
 import { uniqId, createPort } from '../util';
 import { ServiceEventer, ServiceEventerInnerEmit } from './service-eventer';
 import {
   EMessageTypeEvent,
-  EMessageTypeGoodBye,
   EMessageTypeResponse,
   EMessageTypeResponseException,
-  ESessionStateClosingStart,
+  ESessionStateClosed,
   ESessionStateClosingWaitingSecondApprove,
   ESessionStateInit,
-  ESessionStateReady,
 } from '../constant';
+import { MBaseService } from '../service/m-base-service';
+import { ConnectService, setDefer } from '../service';
 
 export abstract class ConnectSession implements IConnectSession {
   /**
@@ -101,12 +98,6 @@ export abstract class ConnectSession implements IConnectSession {
   protected s!: (m: any) => any;
 
   /**
-   * 等待关闭的defer
-   * @protected
-   */
-  protected _closeWaitingDefer: IPromiseDefer<any>;
-
-  /**
    * @param name 客户端名称
    * @param eventer 事件代码
    */
@@ -132,30 +123,28 @@ export abstract class ConnectSession implements IConnectSession {
    * 断开连接
    */
   public async disconnect(): Promise<void> {
-    const { state } = this;
-    if (![ESessionStateReady, ESessionStateClosingWaitingSecondApprove].includes(state)) {
-      throwException('client state is not correct, disconnect failed!');
-    }
-    if (state === ESessionStateReady) {
-      this.state = ESessionStateClosingStart;
-      const initMessage = sendInitMessage();
+    const service = this.getService(ConnectService);
 
-      await this.sendMessageWithResponse(
-        {
-          type: EMessageTypeGoodBye,
-          data: initMessage,
-        },
-        {
-          validate(message) {
-            return message.type === EMessageTypeGoodBye && checkReceiveIsMatchInitMessage(initMessage, message.data);
-          },
-        }
-      );
-      this.state = ESessionStateClosingWaitingSecondApprove;
-      this._closeWaitingDefer = createDefer(1000);
-      return this._closeWaitingDefer.promise;
-    } else {
-    }
+    const defer = createDefer<void>();
+    setDefer(this, defer);
+
+    // 等待二次调用
+    const state = this.state;
+    this.state = ESessionStateClosingWaitingSecondApprove;
+    // 触发断开连接
+    await service
+      .disconnect()
+      .catch((e) => {
+        this.state = state;
+        throw e;
+      })
+      .finally(() => setDefer(this));
+
+    return defer.promise.then(() => {
+      this.messageContext.detachSession(this);
+      this.s = null!;
+      this.state = ESessionStateClosed;
+    });
   }
 
   /**
@@ -239,7 +228,7 @@ export abstract class ConnectSession implements IConnectSession {
    */
   public detachMessageContext() {
     this.messageContext = null!;
-    this._openedDefer.resolve();
+    this._closedDefer.resolve();
   }
 
   public getReceiverPort() {

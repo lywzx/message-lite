@@ -1,7 +1,7 @@
 import { IMessageBaseData, IMessageEvent } from './message-data';
 import { IMessageContext, IWaitMessageResponseOption } from './message-context';
-import { MBaseService } from '../service';
 import { Class } from '../types';
+import { MBaseService } from '../service/m-base-service';
 
 export type IListenOption = Pick<IMessageEvent, 'service' | 'event'>;
 

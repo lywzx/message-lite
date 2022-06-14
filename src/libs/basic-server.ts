@@ -4,6 +4,7 @@ import { MessageContext, WILL_DISCOUNT } from './message-context';
 import { addServices } from '../util';
 import { EventEmitter } from './event-emitter';
 import { ESessionStateClosingWaitingSecondApprove } from '../constant';
+import { ConnectServiceImpl, ConnectService } from '../service';
 
 export abstract class BasicServer extends EventEmitter {
   protected messageContext: IMessageContext;
@@ -14,6 +15,12 @@ export abstract class BasicServer extends EventEmitter {
     super();
     const messageContext = (this.messageContext = new MessageContext(option));
     messageContext.on(WILL_DISCOUNT, this.whenClientWillDisConnected);
+    this.addService([
+      {
+        impl: ConnectServiceImpl,
+        decl: ConnectService,
+      },
+    ]);
   }
 
   /**

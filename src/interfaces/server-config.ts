@@ -1,4 +1,4 @@
-import { MBaseService } from '../service';
+import { MBaseService } from '../service/index-export';
 import { Class } from '../types';
 
 export interface IMessageConfig<T extends (message: any) => void = (message: any) => void> {
