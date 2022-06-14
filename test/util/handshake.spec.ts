@@ -8,8 +8,8 @@ import {
   parseHandshakeMessage,
   sendHandshakeResponseMessage,
   sendInitMessage,
+  createDefer,
 } from '../../src/util';
-import { createDefer } from '../../src/util';
 
 describe('#handshake message test util', () => {
   test('#sendInitMessage should return string', () => {
