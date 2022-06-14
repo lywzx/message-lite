@@ -87,16 +87,14 @@
     "webpack": "^4.42.1",
     "webpack-cli": "^3.3.11",
     "webpack-dev-middleware": "^3.7.2",
-    "webpack-hot-middleware": "^2.25.0"
+    "webpack-hot-middleware": "^2.25.0",
+    "@types/debug": "^4.1.7",
+    "debug": "^4.3.4"
   },
   "husky": {
     "hooks": {
       "pre-commit": "npm run lint-staged",
       "commit-msg": "commitlint -e $HUSKY_GIT_PARAMS"
     }
-  },
-  "dependencies": {
-    "@types/debug": "^4.1.7",
-    "debug": "^4.3.4"
   }
 }
