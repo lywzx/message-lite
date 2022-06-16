@@ -141,8 +141,8 @@ export abstract class ConnectSession implements IConnectSession {
       .finally(() => setDefer(this));
 
     return defer.promise.then(() => {
+      debugger;
       this.messageContext.detachSession(this);
-      this.s = null!;
       this.state = ESessionStateClosed;
     });
   }

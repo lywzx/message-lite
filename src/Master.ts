@@ -8,6 +8,7 @@ import {
   throwException,
   parsePort,
 } from './util';
+import { DISCONNECT } from './constant';
 
 export class Master extends BasicServer {
   protected serviceMap = new Map();
@@ -41,11 +42,15 @@ export class Master extends BasicServer {
     const session = new MasterClient(info.name, new EventEmitter());
     session.initSender(option.createSender(originMessage));
 
-    return session.connect({
+    await session.connect({
       message: data,
       remotePort: info.port1,
       messageContext,
       lifeCircleEvent: this,
+    });
+
+    session.closed.finally(() => {
+      this.emit(DISCONNECT, session);
     });
   };
 

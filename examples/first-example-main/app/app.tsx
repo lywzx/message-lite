@@ -4,7 +4,7 @@ import { AppStore } from '../store';
 import { LeftNav } from './left-nav';
 import { AppRoot } from './app-root';
 import { master } from '../master';
-import { CONNECTED, CONNECTED_FAILED, IConnectSession } from 'message-lite';
+import { CONNECTED, CONNECTED_FAILED, DISCONNECT, IConnectSession } from 'message-lite';
 import { ScreenService } from '@example/first-example-decl';
 
 function AppLayout() {
@@ -17,6 +17,11 @@ function AppLayout() {
     });
 
     master.on(CONNECTED_FAILED, (session: IConnectSession) => {
+      const name = session.getName();
+      removeApp(name);
+    });
+
+    master.on(DISCONNECT, (session: IConnectSession) => {
       const name = session.getName();
       removeApp(name);
     });

@@ -18,6 +18,7 @@ export function setDefer(session: IConnectSession, defer?: IPromiseDefer<any>) {
 }
 
 export function getDefer(session: IConnectSession): IPromiseDefer<any> | undefined {
+  debugger;
   return cacheMap.get(session);
 }
 
@@ -41,14 +42,16 @@ export class ConnectServiceImpl extends ConnectService {
     if (session!.getState() !== ESessionStateClosingWaitingSecondApprove || !defer) {
       return throwExceptionAsync('client status not correct!');
     } else {
-      defer.resolve();
+      Promise.resolve().then(() => defer.resolve());
     }
 
-    (session as any).state = ESessionStateClosed;
-    (session as any).s = null;
-    (session as any).s = null;
-    (session as any).messageContext.detachSession(session);
-    session!.detachMessageContext();
+    defer.promise.finally(() => {
+      (session as any).state = ESessionStateClosed;
+      // (session as any).s = null;
+      (session as any).messageContext.detachSession(session);
+      session!.detachMessageContext();
+    });
+
     return defer!.promise;
   }
 }
