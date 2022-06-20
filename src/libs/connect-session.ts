@@ -25,6 +25,7 @@ import {
   EMessageTypeResponse,
   EMessageTypeResponseException,
   ESessionStateClosed,
+  ESessionStateClosingStart,
   ESessionStateClosingWaitingSecondApprove,
   ESessionStateInit,
 } from '../constant';
@@ -128,23 +129,26 @@ export abstract class ConnectSession implements IConnectSession {
     const defer = createDefer<void>();
     setDefer(this, defer);
 
-    // 等待二次调用
+    // 开始准备关闭
     const state = this.state;
-    this.state = ESessionStateClosingWaitingSecondApprove;
-    // 触发断开连接
-    await service
-      .disconnect()
-      .catch((e) => {
-        this.state = state;
-        throw e;
-      })
-      .finally(() => setDefer(this));
+    this.state = ESessionStateClosingStart;
 
-    return defer.promise.then(() => {
-      debugger;
-      this.messageContext.detachSession(this);
-      this.state = ESessionStateClosed;
+    // 触发断开连接
+    await service.disconnect().catch((e) => {
+      this.state = state;
+      setDefer(this);
+      throw e;
     });
+    // 等待二次确认
+    this.state = ESessionStateClosingWaitingSecondApprove;
+    // 关闭成功
+    return defer.promise
+      .then(() => new Promise((r) => setTimeout(r, 50)))
+      .then(async () => {
+        this.messageContext.detachSession(this);
+        this.state = ESessionStateClosed;
+        setDefer(this);
+      });
   }
 
   /**

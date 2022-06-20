@@ -17,8 +17,8 @@ export const ESessionStateClosingStart = 0x3;
 /**
  * session 等待关闭确认
  */
-export const ESessionStateClosingWaitingSecondApprove = 0x3;
+export const ESessionStateClosingWaitingSecondApprove = 0x4;
 /**
  * session 已断开连接
  */
-export const ESessionStateClosed = 0x4;
+export const ESessionStateClosed = 0x5;

@@ -18,7 +18,6 @@ export function setDefer(session: IConnectSession, defer?: IPromiseDefer<any>) {
 }
 
 export function getDefer(session: IConnectSession): IPromiseDefer<any> | undefined {
-  debugger;
   return cacheMap.get(session);
 }
 
@@ -31,10 +30,24 @@ export class ConnectServiceImpl extends ConnectService {
       return throwExceptionAsync('client state is not correct, disconnect failed!');
     }
     (session as any)!.state = ESessionStateClosingWaitingSecondApprove;
-    return Promise.resolve().finally(async () => {
+
+    // 等50ms发送回复信息
+    setTimeout(() => {
       const service = session!.getService(ConnectService);
-      await service.secondDisconnect();
-    });
+      service
+        .secondDisconnect()
+        .then(() => {
+          return new Promise((resolve) => setTimeout(resolve, 50));
+        })
+        .then(() => {
+          (session as any).state = ESessionStateClosed;
+          // (session as any).s = null;
+          (session as any).messageContext.detachSession(session);
+          session!.detachMessageContext();
+        });
+    }, 50);
+
+    return Promise.resolve();
   }
 
   async secondDisconnect(message?: any, session?: IConnectSession): Promise<void> {
@@ -44,13 +57,6 @@ export class ConnectServiceImpl extends ConnectService {
     } else {
       Promise.resolve().then(() => defer.resolve());
     }
-
-    defer.promise.finally(() => {
-      (session as any).state = ESessionStateClosed;
-      // (session as any).s = null;
-      (session as any).messageContext.detachSession(session);
-      session!.detachMessageContext();
-    });
 
     return defer!.promise;
   }
