@@ -3,6 +3,7 @@ import Button from 'antd/lib/button';
 import Row from 'antd/lib/row';
 import React, { Fragment, useRef, useState } from 'react';
 import { slave } from '../slave';
+import { AppClient } from './AppClient';
 
 export function App() {
   const [screen, setScreen] = useState<{
@@ -97,6 +98,9 @@ export function App() {
           <Row>父屏尺寸-高：{screen.height}</Row>
         </>
       ) : null}
+      <Row>
+        <AppClient />
+      </Row>
     </Fragment>
   );
 }

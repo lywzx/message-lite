@@ -1,4 +1,4 @@
-import { ConnectSession } from './connect-session';
+import { ConnectSession } from '../connect-session';
 import {
   checkReceiveIsMatchInitMessage,
   createDefer,
@@ -6,9 +6,9 @@ import {
   sendHandshakeResponseMessage,
   sendInitMessage,
   throwException,
-} from '../util';
-import { IMessageBaseData, IMessageContext, ITimeout } from '../interfaces';
-import { WILL_CONNECT } from './message-context';
+} from '../../util';
+import { IMessageBaseData, IMessageContext, ITimeout } from '../../interfaces';
+import { WILL_CONNECT } from '../message-context';
 import {
   EMessageTypeHandshake,
   EMessageTypeResponse,
@@ -16,7 +16,7 @@ import {
   ESessionStateInit,
   ESessionStateOpening,
   ESessionStateReady,
-} from '../constant';
+} from '../../constant';
 
 export interface ISlaveClientConnectOption extends ITimeout {
   messageContext: IMessageContext;

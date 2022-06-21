@@ -1,11 +1,11 @@
-import { ConnectSession } from './connect-session';
-import { IEvent, IMessageBaseData, IMessageContext, ITimeout } from '../interfaces';
+import { ConnectSession } from '../connect-session';
+import { IEvent, IMessageBaseData, IMessageContext, ITimeout } from '../../interfaces';
 import {
   checkReceiveIsMatchInitMessage,
   parseHandshakeMessage,
   sendHandshakeResponseMessage,
   throwException,
-} from '../util';
+} from '../../util';
 import {
   CONNECTED,
   CONNECTED_FAILED,
@@ -14,7 +14,7 @@ import {
   ESessionStateInit,
   ESessionStateOpening,
   ESessionStateReady,
-} from '../constant';
+} from '../../constant';
 
 export interface IMasterClientConnectOption extends ITimeout {
   /**
