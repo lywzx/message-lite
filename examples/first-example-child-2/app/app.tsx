@@ -3,6 +3,7 @@ import { Button, Row } from 'antd';
 import React from 'react';
 import { slave } from '../slave';
 import { AppClient } from './AppClient';
+import './index.less';
 
 export function App() {
   const showMessage = async () => {
@@ -12,12 +13,14 @@ export function App() {
 
   return (
     <>
-      <Row>
-        <Button onClick={showMessage}>弹出提示信息！</Button>
-      </Row>
-      <Row>
+      <div className="app-default-btn">
+        <Row>
+          <Button onClick={showMessage}>弹出提示信息！</Button>
+        </Row>
+      </div>
+      <div className="app-client-container">
         <AppClient />
-      </Row>
+      </div>
     </>
   );
 }

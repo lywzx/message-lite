@@ -9,12 +9,19 @@ import {
   parsePort,
 } from './util';
 import { DISCONNECT } from './constant';
+import { ConnectService, ConnectServiceImpl } from './service';
 
 export class Master extends BasicServer {
   protected serviceMap = new Map();
 
   constructor(protected readonly option: IMessageConfig) {
     super(option);
+    this.addService([
+      {
+        impl: ConnectServiceImpl,
+        decl: ConnectService,
+      },
+    ]);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

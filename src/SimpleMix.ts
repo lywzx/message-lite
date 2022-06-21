@@ -7,33 +7,63 @@ import {
   createDefer,
   EHandshakeMessageTypeInit,
   parseHandshakeMessage,
-  parsePort, sendInitMessage,
-  throwException
+  parsePort,
+  sendInitMessage,
+  throwException,
 } from './util';
 import { SimpleClient } from './libs/client/simple-client';
-import { getDefer, setDefer } from './service';
+import { ConnectService, getDefer, setDefer } from './service';
 import { EMessageTypeHandshake } from './constant';
 
 /**
  * 连接配置信息
  */
 export interface IClientConnectOption extends ITimeout {
-  name: string;
-  ports?: [number, number],
+  ports?: number[];
 }
 
 const DEFAULT_PORTS = [999, 888];
 
-export class SimpleMix extends BasicServer {
+export interface ISimpleMixOption extends IMessageConfig {
+  name: string;
+}
 
+export class SimpleMix extends BasicServer {
   protected session!: IConnectSession;
 
   protected _allowCall = false;
 
   protected _connectOption: IClientConnectOption;
 
-  constructor(protected readonly option: IMessageConfig) {
+  public get opened() {
+    return this.session.opened;
+  }
+
+  public get closed() {
+    return this.session.closed;
+  }
+
+  constructor(protected readonly option: ISimpleMixOption) {
     super(option);
+    this.session = new SimpleClient(option.name, this);
+    this.addService([
+      {
+        impl: () => {
+          return {
+            disconnect: () => {
+              setTimeout(() => {
+                this.messageContext.detachSession(this.session);
+                this.messageContext = null!;
+                this.session = null!;
+              });
+
+              return Promise.resolve();
+            },
+          } as ConnectService;
+        },
+        decl: ConnectService,
+      },
+    ]);
   }
 
   getService<T extends MBaseService>(serv: Class<T>): T | undefined {
@@ -41,16 +71,13 @@ export class SimpleMix extends BasicServer {
   }
 
   private whenNewClientConnected = (message: IMessageHandshakeData, originMessage: any) => {
-    const {
-      session,
-      option,
-    } = this;
+    const { session, option, messageContext } = this;
     if (!session) {
-      return ;
+      return;
     }
     const defer = getDefer(this.session)!;
     if (!defer) {
-      return ;
+      return;
     }
 
     const { channel, data } = message;
@@ -58,20 +85,21 @@ export class SimpleMix extends BasicServer {
     if (!parsedHandshake || parsedHandshake.type !== EHandshakeMessageTypeInit) {
       return;
     }
-    const {
-      ports = DEFAULT_PORTS,
-      timeout = 3000
-    } = this._connectOption!;
+    const { ports = DEFAULT_PORTS, timeout = 3000 } = this._connectOption!;
     const info = parsePort(channel);
 
     if (info.name === session.getName() && info.port1 === ports[0] && info.port2 === ports[1]) {
       session.port1 = ports[1];
       session.port2 = ports[0];
       session.initSender(option.createSender(originMessage));
-      (session as SimpleClient).connect({
-        timeout,
-        message: data,
-      }).then(() => defer.resolve()).catch(e => defer.reject(e));
+      messageContext.attachSession(session);
+      (session as SimpleClient)
+        .connect({
+          timeout,
+          message: data,
+        })
+        .then(() => defer.resolve())
+        .catch((e) => defer.reject(e));
     }
   };
 
@@ -79,16 +107,10 @@ export class SimpleMix extends BasicServer {
     if (this._allowCall) {
       throwException('client cannot repeat connect!');
     }
-    const {
-      ports = DEFAULT_PORTS,
-      name,
-      timeout = 30000,
-    } = option;
-    const {
-      messageContext,
-    } = this;
+    const { ports = DEFAULT_PORTS, timeout = 30000 } = option;
+    const { messageContext } = this;
     const sender = this.option.createSender();
-    const session = (this.session = new SimpleClient(name, this));
+    const session = this.session;
     session.initSender(sender);
 
     session.port1 = ports[0];
@@ -97,7 +119,6 @@ export class SimpleMix extends BasicServer {
     messageContext.attachSession(session);
 
     const initMessage = sendInitMessage();
-
     session.sendMessage({
       type: EMessageTypeHandshake,
       data: initMessage,
@@ -108,17 +129,19 @@ export class SimpleMix extends BasicServer {
       // nowork
     };
     return Promise.race([
-        new Promise((resolve) => {
-          waitConnect = (message: IMessageBaseData, messageOrigin: any) => {
-            const res = message.data || '';
-            if (checkReceiveIsMatchInitMessage(initMessage, res)) {
-              resolve(message);
-            }
-          };
-          messageContext.on(WILL_CONNECT, waitConnect);
-        }),
-        createDefer(timeout, (timeout) => new Error('slave connect timeout.')).promise,
-      ]).then(() => undefined).finally(() => {
+      new Promise((resolve) => {
+        waitConnect = (message: IMessageBaseData, messageOrigin: any) => {
+          const res = message.data || '';
+          if (checkReceiveIsMatchInitMessage(initMessage, res)) {
+            resolve(message);
+          }
+        };
+        messageContext.on(WILL_CONNECT, waitConnect);
+      }),
+      createDefer(timeout, (timeout) => new Error('slave connect timeout.')).promise,
+    ])
+      .then(() => undefined)
+      .finally(() => {
         messageContext.off(WILL_CONNECT, waitConnect);
       });
   }
@@ -129,14 +152,10 @@ export class SimpleMix extends BasicServer {
     }
 
     this._connectOption = option;
-    const {
-      timeout = 30000,
-    } = option;
-    const {
-      messageContext
-    } = this;
+    const { timeout = 30000 } = option;
+    const { messageContext } = this;
 
-    const session = (this.session = new SimpleClient(option.name, this));
+    const session = this.session;
 
     const defer = createDefer<void>(timeout);
     this.messageContext.start();
@@ -149,5 +168,10 @@ export class SimpleMix extends BasicServer {
     });
   }
 
-  public async disconnect() {}
+  public disconnect() {
+    return this.session.disconnect().then(() => {
+      this.messageContext = null!;
+      this.session = null!;
+    });
+  }
 }

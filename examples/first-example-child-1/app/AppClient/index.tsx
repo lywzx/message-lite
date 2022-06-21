@@ -2,6 +2,9 @@ import React, { useCallback, useRef, useState } from 'react';
 import Button from 'antd/lib/button';
 import { SimpleMix } from 'message-lite';
 import { CustomEvent } from '@example/first-example-decl';
+import Row from 'antd/lib/row';
+import { ALL_SERVICE } from '../../core/impl';
+import { AlertService } from '@example/first-children-decl';
 
 export enum EConnectStatus {
   TO_CONNECT,
@@ -11,7 +14,7 @@ export enum EConnectStatus {
 }
 
 const textMap = new Map([
-  [EConnectStatus.TO_CONNECT, '连接小程序客户端'],
+  [EConnectStatus.TO_CONNECT, '点击后；再打开小程序2；点连接'],
   [EConnectStatus.CONNECTING, '等待连接'],
   [EConnectStatus.CONNECTED, '连接成功'],
   [EConnectStatus.FAILED, '连接失败'],
@@ -26,6 +29,7 @@ export function AppClient() {
 
   const initClient = useCallback(() => {
     currentClient.current = new SimpleMix({
+      name: 'app-miniapp-test-connect',
       listenMessage(fn: (message: any) => void): void {
         window.parent.addEventListener(listenEventName, (data) => {
           console.log('1111111', listenEventName, data, (data as any).data);
@@ -43,24 +47,56 @@ export function AppClient() {
       transformMessage(data: CustomEvent) {
         return data.data;
       },
-    });
+    }).addService(ALL_SERVICE);
     updateClientState(EConnectStatus.CONNECTING);
 
     currentClient
-      .current!.waitConnect({
-        name: 'app-miniapp-test-connect',
-      })
+      .current!.waitConnect({})
       .then(() => {
         updateClientState(EConnectStatus.CONNECTED);
       })
       .catch(() => {
         updateClientState(EConnectStatus.FAILED);
       });
+
+    currentClient.current!.closed.then(() => {
+      updateClientState(EConnectStatus.TO_CONNECT);
+    });
+  }, []);
+
+  const notify = useCallback(() => {
+    const service = currentClient.current!.getService(AlertService)!;
+    service.alert({ message: '小程序1调用小程序2', description: '测试调用' });
+  }, []);
+
+  const clientDisconnect = useCallback(() => {
+    currentClient.current!.disconnect().finally(() => {
+      currentClient.current = null;
+    });
   }, []);
 
   return (
     <div>
-      <Button onClick={initClient}>{textMap.get(clientState)}</Button>
+      <Row>
+        <Button
+          onClick={initClient}
+          disabled={![EConnectStatus.TO_CONNECT, EConnectStatus.FAILED].includes(clientState)}
+        >
+          {textMap.get(clientState)}
+        </Button>
+      </Row>
+      <Row>
+        <Button onClick={clientDisconnect} disabled={clientState !== EConnectStatus.CONNECTED}>
+          断开连接
+        </Button>
+      </Row>
+      {clientState === EConnectStatus.CONNECTED && (
+        <div>
+          <Row title="调用服务示例">
+            <Button onClick={notify}>弹出消息提醒</Button>
+          </Row>
+        </div>
+      )}
     </div>
   );
 }
