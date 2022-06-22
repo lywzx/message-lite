@@ -53,8 +53,6 @@ export class SimpleMix extends BasicServer {
             disconnect: () => {
               setTimeout(() => {
                 this.messageContext.detachSession(this.session);
-                this.messageContext = null!;
-                this.session = null!;
               });
 
               return Promise.resolve();
@@ -140,7 +138,9 @@ export class SimpleMix extends BasicServer {
       }),
       createDefer(timeout, (timeout) => new Error('slave connect timeout.')).promise,
     ])
-      .then(() => undefined)
+      .then(() => {
+        (session as any)._openedDefer.resolve();
+      })
       .finally(() => {
         messageContext.off(WILL_CONNECT, waitConnect);
       });
@@ -169,9 +169,6 @@ export class SimpleMix extends BasicServer {
   }
 
   public disconnect() {
-    return this.session.disconnect().then(() => {
-      this.messageContext = null!;
-      this.session = null!;
-    });
+    return this.session.disconnect();
   }
 }
