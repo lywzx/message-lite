@@ -1,8 +1,9 @@
 import { Class } from './types';
 import { throwException } from './util';
-import { BasicServer, ConnectSession, SlaveClient, EventEmitter } from './libs';
-import { IMessageConfig, ITimeout } from './interfaces';
-import { MBaseService } from './service';
+import { BasicServer, SlaveClient, EventEmitter } from './libs';
+import { IConnectSession, IMessageConfig, ITimeout } from './interfaces';
+import { MBaseService } from './service/m-base-service';
+import { ConnectService, ConnectServiceImpl } from './service';
 
 export interface IConnectOption extends ITimeout {
   name?: string;
@@ -11,10 +12,16 @@ export interface IConnectOption extends ITimeout {
 export class Slave extends BasicServer {
   protected isConnecting = false;
 
-  protected session!: ConnectSession;
+  protected session!: IConnectSession;
 
   constructor(protected readonly option: IMessageConfig) {
     super(option);
+    this.addService([
+      {
+        impl: ConnectServiceImpl,
+        decl: ConnectService,
+      },
+    ]);
   }
 
   /**

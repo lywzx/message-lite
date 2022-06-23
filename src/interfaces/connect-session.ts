@@ -1,7 +1,7 @@
 import { IMessageBaseData, IMessageEvent } from './message-data';
 import { IMessageContext, IWaitMessageResponseOption } from './message-context';
-import { MBaseService } from '../service';
 import { Class } from '../types';
+import { MBaseService } from '../service/m-base-service';
 
 export type IListenOption = Pick<IMessageEvent, 'service' | 'event'>;
 
@@ -55,12 +55,7 @@ export interface IConnectSession {
   /**
    * session 状态初始化完成
    */
-  ready(): Promise<void>;
-
-  /**
-   * 获取发送端口
-   */
-  getSenderPort(): string;
+  getState(): number;
 
   /**
    * 获取接收端口

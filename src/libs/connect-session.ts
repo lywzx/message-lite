@@ -8,7 +8,6 @@ import {
 } from '../util';
 import { Class } from '../types';
 import {
-  EMessageType,
   IConnectSession,
   IEvent,
   IListenOption,
@@ -19,21 +18,21 @@ import {
   ITimeout,
   IWaitMessageResponseOption,
 } from '../interfaces';
-import { MBaseService } from '../service';
 import { uniqId, createPort } from '../util';
 import { ServiceEventer, ServiceEventerInnerEmit } from './service-eventer';
+import {
+  EMessageTypeEvent,
+  EMessageTypeResponse,
+  EMessageTypeResponseException,
+  ESessionStateClosed,
+  ESessionStateClosingStart,
+  ESessionStateClosingWaitingSecondApprove,
+  ESessionStateInit,
+} from '../constant';
+import { MBaseService } from '../service/m-base-service';
+import { ConnectService, setDefer } from '../service';
 
 export abstract class ConnectSession implements IConnectSession {
-  /**
-   * 断开连接
-   */
-  abstract disconnect(): Promise<void>;
-
-  /**
-   * 开始连接
-   */
-  abstract connect(option: ITimeout): Promise<void>;
-
   /**
    * wait session opened
    */
@@ -51,7 +50,7 @@ export abstract class ConnectSession implements IConnectSession {
   /**
    * 当前session是否处理ready状态
    */
-  public isReady = false;
+  protected state = ESessionStateInit;
 
   /**
    * 建立连接时的defer对象
@@ -110,6 +109,49 @@ export abstract class ConnectSession implements IConnectSession {
   }
 
   /**
+   * get client state
+   */
+  getState(): number {
+    return this.state;
+  }
+
+  /**
+   * 开始连接
+   */
+  abstract connect(option: ITimeout): Promise<void>;
+
+  /**
+   * 断开连接
+   */
+  public async disconnect(): Promise<void> {
+    const service = this.getService(ConnectService);
+
+    const defer = createDefer<void>();
+    setDefer(this, defer);
+
+    // 开始准备关闭
+    const state = this.state;
+    this.state = ESessionStateClosingStart;
+
+    // 触发断开连接
+    await service.disconnect().catch((e) => {
+      this.state = state;
+      setDefer(this);
+      throw e;
+    });
+    // 等待二次确认
+    this.state = ESessionStateClosingWaitingSecondApprove;
+    // 关闭成功
+    return defer.promise
+      .then(() => new Promise((r) => setTimeout(r, 50)))
+      .then(async () => {
+        this.messageContext.detachSession(this);
+        this.state = ESessionStateClosed;
+        setDefer(this);
+      });
+  }
+
+  /**
    * 初始化消息发布
    * @param sender
    */
@@ -124,11 +166,11 @@ export abstract class ConnectSession implements IConnectSession {
   public sendMessage<T extends ISessionSendMessage>(
     message: Pick<T, Exclude<keyof T, 'channel'>>
   ): IMessageBaseData<T> {
-    const { s } = this;
+    const { s, name, port1, port2 } = this;
     const mContent: IMessageBaseData = {
       ...message,
       id: message.id ?? uniqId(),
-      channel: this.getSenderPort(),
+      channel: createPort(name, port1, port2),
     };
 
     if (typeof s !== 'function') {
@@ -146,8 +188,7 @@ export abstract class ConnectSession implements IConnectSession {
 
     return this.waitMessageResponse(msg, {
       timeout,
-      validate: (data: IMessageBaseData) =>
-        [EMessageType.RESPONSE, EMessageType.RESPONSE_EXCEPTION].includes(data.type),
+      validate: (data: IMessageBaseData) => [EMessageTypeResponse, EMessageTypeResponseException].includes(data.type),
     });
   }
 
@@ -162,7 +203,7 @@ export abstract class ConnectSession implements IConnectSession {
     const eventId = `res:${id}`;
     const listener = (data: T) => {
       if (validate(data)) {
-        if (data.type === EMessageType.RESPONSE_EXCEPTION) {
+        if (data.type === EMessageTypeResponseException) {
           const error = new Error(data.data);
           reject(error);
         } else {
@@ -178,15 +219,6 @@ export abstract class ConnectSession implements IConnectSession {
     });
   }
 
-  public async ready() {
-    this.isReady = true;
-    this._openedDefer.resolve();
-  }
-
-  public release() {
-    this._openedDefer.resolve();
-  }
-
   /**
    * attach message context
    * @param messageContext
@@ -200,11 +232,7 @@ export abstract class ConnectSession implements IConnectSession {
    */
   public detachMessageContext() {
     this.messageContext = null!;
-    this._openedDefer.resolve();
-  }
-
-  public getSenderPort() {
-    return createPort(this.name, this.port1, this.port2);
+    this._closedDefer.resolve();
   }
 
   public getReceiverPort() {
@@ -226,7 +254,7 @@ export abstract class ConnectSession implements IConnectSession {
   public receiveMessage(message: ISessionSendMessage) {
     const { eventer } = this;
     switch (message.type) {
-      case EMessageType.EVENT: {
+      case EMessageTypeEvent: {
         const m = message as IMessageEvent;
         eventer.emit(createMessageEventName(m, false), m.data);
         break;

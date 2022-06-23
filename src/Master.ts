@@ -1,13 +1,27 @@
 import { IConnectSession, IMessageConfig, IMessageHandshakeData } from './interfaces';
 import { Class } from './types';
-import { BasicServer, WILL_CONNECT, WILL_DISCOUNT, MasterClient, EventEmitter } from './libs';
-import { createMasterService, EHandshakeMessageType, parseHandshakeMessage, throwException, parsePort } from './util';
+import { BasicServer, WILL_CONNECT, MasterClient, EventEmitter } from './libs';
+import {
+  createMasterService,
+  EHandshakeMessageTypeInit,
+  parseHandshakeMessage,
+  throwException,
+  parsePort,
+} from './util';
+import { DISCONNECT } from './constant';
+import { ConnectService, ConnectServiceImpl } from './service';
 
 export class Master extends BasicServer {
   protected serviceMap = new Map();
 
   constructor(protected readonly option: IMessageConfig) {
     super(option);
+    this.addService([
+      {
+        impl: ConnectServiceImpl,
+        decl: ConnectService,
+      },
+    ]);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -28,24 +42,23 @@ export class Master extends BasicServer {
 
     const { channel, data } = message;
     const parsedHandshake = parseHandshakeMessage(data);
-    if (!parsedHandshake || parsedHandshake.type !== EHandshakeMessageType.INIT) {
+    if (!parsedHandshake || parsedHandshake.type !== EHandshakeMessageTypeInit) {
       return;
     }
     const info = parsePort(channel);
     const session = new MasterClient(info.name, new EventEmitter());
     session.initSender(option.createSender(originMessage));
 
-    return session.connect({
+    await session.connect({
       message: data,
       remotePort: info.port1,
       messageContext,
       lifeCircleEvent: this,
     });
-  };
 
-  protected whenClientWillDisConnected = (message: any) => {
-    //
-    message = 1;
+    session.closed.finally(() => {
+      this.emit(DISCONNECT, session);
+    });
   };
 
   async start(): Promise<void> {
@@ -56,7 +69,6 @@ export class Master extends BasicServer {
     const messageContext = this.messageContext;
     messageContext.start();
     messageContext.on(WILL_CONNECT, this.whenNewClientConnected);
-    messageContext.on(WILL_DISCOUNT, this.whenClientWillDisConnected);
   }
 
   async stop(): Promise<void> {

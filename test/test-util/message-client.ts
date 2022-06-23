@@ -1,6 +1,6 @@
 import { EventEmitter } from '../../src/libs';
 import { IEvent } from '../../src/interfaces';
-import { Master, Slave } from '../../src';
+import { Master, SimpleMix, Slave } from '../../src';
 
 export const GLOBAL_EVENT_NAME = 'global:event';
 export const GLOBAL_SLAVE_EVENT_NAME = 'global:slave:event';
@@ -56,4 +56,46 @@ export function createClient(globalEvent: IEvent) {
       };
     },
   });
+}
+
+/**
+ * create simple mix client
+ */
+export function createSimpleMixClient() {
+  const clientName = 'app-client-name';
+  const globalEvent = new EventEmitter();
+  const eventNames = ['page-master:event', 'page-slave:event'];
+  const mClient = new SimpleMix({
+    name: clientName,
+    listenMessage(fn: (message: any) => void): void {
+      globalEvent.on(eventNames[0], fn);
+    },
+    unListenMessage(fn: (message: any) => void): void {
+      globalEvent.off(eventNames[0], fn);
+    },
+    createSender(origin?: any): (message: any) => void {
+      return function (p1: any) {
+        globalEvent.emit(eventNames[1], p1);
+      };
+    },
+  });
+  const sClient = new SimpleMix({
+    name: clientName,
+    listenMessage(fn: (message: any) => void): void {
+      globalEvent.on(eventNames[1], fn);
+    },
+    unListenMessage(fn: (message: any) => void): void {
+      globalEvent.off(eventNames[1], fn);
+    },
+    createSender(origin?: any): (message: any) => void {
+      return function (p1: any) {
+        globalEvent.emit(eventNames[0], p1);
+      };
+    },
+  });
+
+  return {
+    mClient,
+    sClient,
+  };
 }

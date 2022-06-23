@@ -1,7 +1,6 @@
 import { Class } from '../types';
 import { getApiDeclInfo, IApiDeclFullApi } from './api-decl';
 import {
-  EMessageType,
   IAddService,
   IConnectSession,
   IEventerConstructor,
@@ -11,10 +10,17 @@ import {
   ISessionSendMessage,
   ITimeout,
 } from '../interfaces';
-import { MBaseService } from '../service';
 import { createMessageEventName } from './message-helper';
 import { throwException } from './exception';
 import { createDefer } from './createDefer';
+import {
+  EMessageTypeCall,
+  EMessageTypeEventOff,
+  EMessageTypeEventOn,
+  EMessageTypeResponse,
+  EMessageTypeResponseException,
+} from '../constant';
+import { MBaseService } from '../service/m-base-service';
 
 /**
  * 获取调用服务
@@ -49,7 +55,7 @@ export function createSlaveService<T extends MBaseService>(
         ...config,
       };
       const callData = {
-        type: EMessageType.CALL,
+        type: EMessageTypeCall,
         service: serviceName,
         method,
         data,
@@ -72,13 +78,13 @@ export function createSlaveService<T extends MBaseService>(
           evter.emit(args[0]);
         });
         session.sendMessage<Omit<IMessageEvent, 'id'>>({
-          type: EMessageType.EVENT_ON,
+          type: EMessageTypeEventOn,
           ...opt,
         });
       },
       whenUnListened() {
         session.sendMessage<Omit<IMessageEvent, 'id'>>({
-          type: EMessageType.EVENT_OFF,
+          type: EMessageTypeEventOff,
           ...opt,
         });
       },
@@ -136,7 +142,7 @@ export function addServices(services: Array<IAddService<any, any>>, messageConte
     let apiInstance: any;
     info.apis.forEach((api) => {
       const eventName = createMessageEventName({
-        type: EMessageType.CALL,
+        type: EMessageTypeCall,
         service: info.name,
         method: api.method,
       });
@@ -159,7 +165,7 @@ export function addServices(services: Array<IAddService<any, any>>, messageConte
             session.sendMessage({
               fromId: data.id,
               id: data.id,
-              type: EMessageType.RESPONSE,
+              type: EMessageTypeResponse,
               data: result,
             });
           }
@@ -169,7 +175,7 @@ export function addServices(services: Array<IAddService<any, any>>, messageConte
             session.sendMessage({
               fromId: data.id,
               id: data.id,
-              type: EMessageType.RESPONSE_EXCEPTION,
+              type: EMessageTypeResponseException,
               data: err.stack || err.message,
             });
           } else {

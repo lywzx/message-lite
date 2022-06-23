@@ -3,6 +3,8 @@ import Button from 'antd/lib/button';
 import Row from 'antd/lib/row';
 import React, { Fragment, useRef, useState } from 'react';
 import { slave } from '../slave';
+import { AppClient } from './AppClient';
+import './index.less';
 
 export function App() {
   const [screen, setScreen] = useState<{
@@ -73,30 +75,35 @@ export function App() {
 
   return (
     <Fragment>
-      <Row>
-        <Button onClick={showMessage}>message1提示信息</Button>
-        <Button onClick={showMessage2}>message2提示信息</Button>
-        <Button onClick={showMessage3}>message2提示信息info2</Button>
-        <Button onClick={showCurrentTime}>打印当前系统时间</Button>
-        <Button danger onClick={showUnSupportMethod}>
-          出错-调用未实现的方法
-        </Button>
-      </Row>
-      <Row>
-        <Button
-          type="primary"
-          danger={screen.listened}
-          onClick={screen.listened ? unListenParentScreen : listenParentScreen}
-        >
-          监听父级尺寸
-        </Button>
-      </Row>
-      {screen.listened ? (
-        <>
-          <Row>父屏尺寸-宽：{screen.width}</Row>
-          <Row>父屏尺寸-高：{screen.height}</Row>
-        </>
-      ) : null}
+      <div className="app-default-btn">
+        <Row>
+          <Button onClick={showMessage}>message1提示信息</Button>
+          <Button onClick={showMessage2}>message2提示信息</Button>
+          <Button onClick={showMessage3}>message2提示信息info2</Button>
+          <Button onClick={showCurrentTime}>打印当前系统时间</Button>
+          <Button danger onClick={showUnSupportMethod}>
+            出错-调用未实现的方法
+          </Button>
+        </Row>
+        <Row>
+          <Button
+            type="primary"
+            danger={screen.listened}
+            onClick={screen.listened ? unListenParentScreen : listenParentScreen}
+          >
+            监听父级尺寸
+          </Button>
+        </Row>
+        {screen.listened ? (
+          <>
+            <Row>父屏尺寸-宽：{screen.width}</Row>
+            <Row>父屏尺寸-高：{screen.height}</Row>
+          </>
+        ) : null}
+      </div>
+      <div className="app-client-container">
+        <AppClient />
+      </div>
     </Fragment>
   );
 }

@@ -7,8 +7,8 @@ import {
   IApiDeclFullApiEvent,
   getApiDeclInfo,
 } from '../util/api-decl';
-import { MBaseService } from '../service';
 import { throwException } from '../util';
+import { MBaseService } from '../service/m-base-service';
 
 /**
  * decl api

@@ -30,7 +30,9 @@ export function LeftNav() {
           appService = (
             <ul className="app-child-api">
               <li>
-                <a href="javascript:void" onClick={alertInfo}>打印消息</a>
+                <a href="" onClick={alertInfo}>
+                  打印消息
+                </a>
               </li>
             </ul>
           );

@@ -151,13 +151,19 @@ describe('#message-context client serve test util', () => {
     expect(() => slave.getService(AppTestService)).to.be.throw(Error);
   });
 
-  test('#repeat start or connect should throw exception', async () => {
+  test('#test disconnect', async () => {
     const { master, globalEvent } = createServe();
     await master.start();
-    await expect(master.start()).to.be.rejectedWith(Error);
 
     const slave = createClient(globalEvent);
     await slave.connect();
-    await expect(slave.connect()).to.be.rejectedWith(Error);
+
+    expect(master.getSession()).to.be.have.length(1);
+
+    await slave.disconnect();
+
+    await sleep(50);
+
+    expect(master.getSession()).to.be.have.length(0);
   });
 });
