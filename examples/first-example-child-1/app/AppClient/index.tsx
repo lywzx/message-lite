@@ -31,10 +31,7 @@ export function AppClient() {
     currentClient.current = new SimpleMix({
       name: 'app-miniapp-test-connect',
       listenMessage(fn: (message: any) => void): void {
-        window.parent.addEventListener(listenEventName, (data) => {
-          console.log('1111111', listenEventName, data, (data as any).data);
-          fn(data);
-        });
+        window.parent.addEventListener(listenEventName, fn);
       },
       unListenMessage(fn: (message: any) => void): void {
         window.parent.removeEventListener(listenEventName, fn);

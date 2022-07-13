@@ -150,3 +150,67 @@ slave.connect().then(async () => {
     await service.alert({message: '测试', description: '服务测试'});
 });
 ```
+
+## 客户端+客户端模式
+
+客户端+客户端模式，是一种1对1通信的方式。使用上，与服务器+客户端非常的相似。可以理解为把服务器启动换成了等待连接。
+
+下面是两个客户端：
+
+```typescript
+// 客户端1
+const client1 = new SimpleMix({
+  name: 'app-miniapp-test-connect',
+  listenMessage(fn: (message: any) => void): void {
+    window.parent.addEventListener(listenEventName, fn);
+  },
+  unListenMessage(fn: (message: any) => void): void {
+    window.parent.removeEventListener(listenEventName, fn);
+  },
+  createSender(origin?: any): (message: any) => void {
+    return function (p1: any) {
+      window.parent.dispatchEvent(new CustomEvent(emitEventName, p1));
+    };
+  },
+  transformMessage(data: CustomEvent) {
+    return data.data;
+  },
+});
+
+// 客户端2
+const client2 = new SimpleMix({
+    name: 'app-miniapp-test-connect',
+    listenMessage(fn: (message: any) => void): void {
+        window.parent.addEventListener(listenEventName, fn);
+    },
+    unListenMessage(fn: (message: any) => void): void {
+        window.parent.removeEventListener(listenEventName, fn);
+    },
+    createSender(origin?: any): (message: any) => void {
+        return function (p1: any) {
+            window.parent.dispatchEvent(new CustomEvent(emitEventName, p1));
+        };
+    },
+    transformMessage(data: CustomEvent) {
+        return data.data;
+    },
+})
+```
+
+客户间互相连接：
+
+```typescript
+client1.waitConnect().then(() => {
+    //
+    console.log('连接成功！')
+});
+
+client2.connect().then(() => {
+    // 连接成功
+});
+```
+
+### 服务添加及调用
+
+与服务器+客户端模式一样，以上两个客户端均支持`addService`以及`getService`方法。可以很容易添加服务及调用服务。
+
