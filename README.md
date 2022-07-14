@@ -1,6 +1,6 @@
 # 关于message-lite
 
-[![Build Status](https://github.com/lywzx/message-lite/actions/workflows/node.js.yml/badge.svg?branch=master)](https://github.com/lywzx/message-lite/actions/workflows/node.js.yml)
+[![Build Status](https://github.com/lywzx/message-lite/actions/workflows/node.js.yml/badge.svg?branch=main)](https://github.com/lywzx/message-lite/actions/workflows/node.js.yml)
 [![codecov](https://codecov.io/gh/lywzx/message-lite/branch/main/graph/badge.svg)](https://codecov.io/gh/lywzx/message-lite)
 [![NPM version](https://img.shields.io/npm/v/message-lite.svg?style=flat-square)](https://www.npmjs.com/package/message-lite)
 [![NPM downloads](https://img.shields.io/npm/dm/message-lite.svg?style=flat-square)](https://www.npmjs.com/package/message-lite)
