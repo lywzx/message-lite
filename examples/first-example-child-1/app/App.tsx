@@ -41,7 +41,9 @@ export function App() {
 
   const showUnSupportMethod = async () => {
     const timeService = slave.getService(TimeService)!;
+    debugger;
     await timeService.timeout(10000);
+    debugger;
   };
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function

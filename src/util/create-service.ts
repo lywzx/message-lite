@@ -11,7 +11,7 @@ import {
   ITimeout,
 } from '../interfaces';
 import { createMessageEventName } from './message-helper';
-import { throwException } from './exception';
+import { errorToPlain, throwException } from './exception';
 import { createDefer } from './createDefer';
 import {
   EMessageTypeCall,
@@ -171,12 +171,11 @@ export function addServices(services: Array<IAddService<any, any>>, messageConte
           }
         } catch (e) {
           if (!api.notify) {
-            const err = e as Error;
             session.sendMessage({
               fromId: data.id,
               id: data.id,
               type: EMessageTypeResponseException,
-              data: err.stack || err.message,
+              data: errorToPlain(e),
             });
           } else {
             throw e;

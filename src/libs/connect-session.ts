@@ -5,6 +5,7 @@ import {
   getApiDeclInfo,
   IPromiseDefer,
   throwException,
+  plainToError,
 } from '../util';
 import { Class } from '../types';
 import {
@@ -204,7 +205,7 @@ export abstract class ConnectSession implements IConnectSession {
     const listener = (data: T) => {
       if (validate(data)) {
         if (data.type === EMessageTypeResponseException) {
-          const error = new Error(data.data);
+          const error = data.data ? plainToError(data.data) : new Error('unknown error from message-lite');
           reject(error);
         } else {
           resolve(data.data);
