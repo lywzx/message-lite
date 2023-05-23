@@ -36,8 +36,12 @@ export function errorToPlain(error: any): IErrorToPlainObject | undefined {
 
 /**
  * 普通对象转换error对象
- * @param error
+ * @param errorData
  */
-export function plainToError(error: IErrorToPlainObject): Error {
-  return Object.assign(new Error(), error);
+export function plainToError(errorData: IErrorToPlainObject): Error {
+  const error = Object.create(Error.prototype);
+  (Object.getOwnPropertyNames(errorData) as Array<keyof IErrorToPlainObject>).forEach((key) => {
+    error[key] = errorData[key];
+  });
+  return error;
 }

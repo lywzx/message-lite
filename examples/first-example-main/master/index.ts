@@ -8,14 +8,7 @@ export const master = new Master({
     };
   },
   listenMessage(fn) {
-    window.addEventListener(
-      'message',
-      (...args) => {
-        console.log('1111111-master', args[0], args[0].data);
-        fn(...args);
-      },
-      false
-    );
+    window.addEventListener('message', fn, false);
   },
   unListenMessage(fn) {
     window.removeEventListener('message', fn, false);
