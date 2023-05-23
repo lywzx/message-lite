@@ -25,7 +25,7 @@ export interface IErrorToPlainObject {
  * @param error
  */
 export function errorToPlain(error: any): IErrorToPlainObject | undefined {
-  if (error && error instanceof Error) {
+  if (error && (error.name || error.message || error.stack)) {
     return {
       name: error.name,
       message: error.message,
