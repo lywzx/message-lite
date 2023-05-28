@@ -18,7 +18,7 @@ jobs:
       - name: Set Up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: 14
+          node-version: 16
 
       - name: Bump Version
         id: bump_version
@@ -40,6 +40,7 @@ jobs:
         run: |
           NEW_VERSION=${{ steps.bump_version.outputs.new_version }}
           git tag -a "v$NEW_VERSION" -m "Release version $NEW_VERSION"
+          echo "::set-output name=tag_name::v$NEW_VERSION"  # 将标签名称输出为输出变量
 
       - name: Push Changes and Tag
         run: |
@@ -51,7 +52,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.create_tag.outputs.tag }}
-          release_name: Release ${{ steps.create_tag.outputs.tag }}
+          tag_name: ${{ steps.create_tag.outputs.tag_name }}  # 使用输出变量作为标签名称
+          release_name: "Release ${{ steps.create_tag.outputs.tag_name }}"  # 使用输出变量作为 release_name
           body: |
-            Version ${{ steps.create_tag.outputs.tag }}
+            Version ${{ steps.create_tag.outputs.tag_name }}  # 使用输出变量在 body 中打印标签名称
+          draft: false
+          prerelease: false
