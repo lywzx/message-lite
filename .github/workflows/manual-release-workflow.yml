@@ -1,0 +1,57 @@
+name: Manual Release Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'New version number'
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Set Up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 14
+
+      - name: Bump Version
+        id: bump_version
+        run: |
+          NEW_VERSION="${{ github.event.inputs.version }}"
+          echo "::set-output name=new_version::$NEW_VERSION"
+
+          # Update version in package.json
+          sed -i "s/\"version\": \".*\"/\"version\": \"$NEW_VERSION\"/" package.json
+
+      - name: Commit Changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -a -m "Bump version to ${{ steps.bump_version.outputs.new_version }}"
+
+      - name: Create Tag
+        id: create_tag
+        run: |
+          NEW_VERSION=${{ steps.bump_version.outputs.new_version }}
+          git tag -a "v$NEW_VERSION" -m "Release version $NEW_VERSION"
+
+      - name: Push Changes and Tag
+        run: |
+          git push --follow-tags
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.create_tag.outputs.tag }}
+          release_name: Release ${{ steps.create_tag.outputs.tag }}
+          body: |
+            Version ${{ steps.create_tag.outputs.tag }}
