@@ -40,7 +40,7 @@ jobs:
         run: |
           NEW_VERSION=${{ steps.bump_version.outputs.new_version }}
           git tag -a "v$NEW_VERSION" -m "Release version $NEW_VERSION"
-          echo "TAG_NAME=v$NEW_VERSION" >> $GITHUB_ENV  # 将标签名称存储在环境变量中
+          echo "::set-output name=tag_name::v$NEW_VERSION"  # 将标签名称输出为输出变量
 
       - name: Push Changes and Tag
         run: |
@@ -52,9 +52,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ env.TAG_NAME }}  # 在标签名称前添加 "v" 前缀
-          release_name: Release ${{ env.TAG_NAME }}  # 在 release_name 中添加 "v" 前缀
+          tag_name: ${{ steps.create_tag.outputs.tag_name }}  # 使用输出变量作为标签名称
+          release_name: "Release ${{ steps.create_tag.outputs.tag_name }}"  # 使用输出变量作为 release_name
           body: |
-            Version ${{ env.TAG_NAME }}  # 在 body 中添加 "v" 前缀
+            Version ${{ steps.create_tag.outputs.tag_name }}  # 使用输出变量在 body 中打印标签名称
           draft: false
           prerelease: false
