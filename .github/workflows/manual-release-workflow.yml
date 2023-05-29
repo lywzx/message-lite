@@ -126,6 +126,8 @@ jobs:
 
       - name: npm whoami
         run: |
+          cat ~/.npmrc
+          rm -rf ./npmrc
           npm whoami --registry https://registry.npmjs.org
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
