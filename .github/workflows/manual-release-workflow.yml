@@ -15,8 +15,18 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 16
-      - run: yarn
-      - run: yarn test
+
+      - name: Cache node_modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+
+      - name: Install Dependencies
+          - run: yarn
+
+      - name: Run test
+          - run: yarn test
 
   release:
     needs: test
@@ -89,7 +99,15 @@ jobs:
           node-version: 16
           registry-url: https://registry.npmjs.org/
       - run: yarn
-      - run: yarn build
+
+      - name: Cache node_modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+
+      - name: Build Package
+        run: yarn build
 
       - name: Get Package Name
         id: get_package_name
@@ -106,7 +124,6 @@ jobs:
             TAG_NAME="latest"
           fi
           echo "::set-output name=tag_name::$TAG_NAME"
-
 
       - name: Publish to NPM
         run: |
