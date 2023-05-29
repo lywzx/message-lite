@@ -100,7 +100,7 @@ jobs:
       - name: Set Tag Name
         id: set_tag_name
         run: |
-          PACKAGE_VERSION=${{ steps.bump_version.outputs.new_version }}
+          PACKAGE_VERSION=${{ steps.get_package_name.outputs.package_name }}
           TAG_NAME=$(echo "$PACKAGE_VERSION" | grep -oE '[a-z]+(?=[.\-]\d+)?$')
           if [[ -z "$TAG_NAME" ]]; then
             TAG_NAME="latest"
