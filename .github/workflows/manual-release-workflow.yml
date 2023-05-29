@@ -122,7 +122,7 @@ jobs:
         run: |
           PACKAGE_VERSION=${{ steps.get_package_version.outputs.package_version }}
           TAG_NAME=$(echo "$PACKAGE_VERSION" | grep -oE '[a-z]+')
-          if [[ -z "$TAG_NAME" ]]; then
+          if [ -z "$TAG_NAME" ]; then
             TAG_NAME="latest"
           fi
           echo "::set-output name=tag_name::$TAG_NAME"
