@@ -8,9 +8,29 @@ on:
         required: true
 
 jobs:
-  release:
+  test:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
 
+      - name: Cache node_modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+
+      - name: Install Dependencies
+        run: yarn
+
+      - name: Run test
+        run: yarn test
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2
@@ -35,12 +55,22 @@ jobs:
           git config --local user.name "GitHub Action"
           git commit -a -m "Bump version to ${{ steps.bump_version.outputs.new_version }}"
 
+      - name: Determine Release Type
+        id: determine_release_type
+        run: |
+          NEW_VERSION="${{ steps.bump_version.outputs.new_version }}"
+          if [[ "$NEW_VERSION" == *"-alpha"* ]]; then
+            echo "::set-output name=release_type::prerelease"
+          else
+            echo "::set-output name=release_type::release"
+          fi
+
       - name: Create Tag
         id: create_tag
         run: |
           NEW_VERSION=${{ steps.bump_version.outputs.new_version }}
           git tag -a "v$NEW_VERSION" -m "Release version $NEW_VERSION"
-          echo "::set-output name=tag_name::v$NEW_VERSION"  # 将标签名称输出为输出变量
+          echo "::set-output name=tag_name::v$NEW_VERSION"
 
       - name: Push Changes and Tag
         run: |
@@ -52,9 +82,52 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.create_tag.outputs.tag_name }}  # 使用输出变量作为标签名称
-          release_name: "Release ${{ steps.create_tag.outputs.tag_name }}"  # 使用输出变量作为 release_name
+          tag_name: ${{ steps.create_tag.outputs.tag_name }}
+          release_name: "Release ${{ steps.create_tag.outputs.tag_name }}"
           body: |
-            Version ${{ steps.create_tag.outputs.tag_name }}  # 使用输出变量在 body 中打印标签名称
+            Version ${{ steps.create_tag.outputs.tag_name }}
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.determine_release_type.outputs.release_type == 'prerelease' }}
+
+  publish-npm:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          always-auth: true
+          node-version: 16
+          registry-url: https://registry.npmjs.org/
+
+      - name: Cache node_modules
+        uses: actions/cache@v2
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+
+      - name: Build Package
+        run: yarn build
+
+      - name: Get Package Version
+        id: get_package_version
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          echo "::set-output name=package_version::$PACKAGE_VERSION"
+
+      - name: Set Tag Name
+        id: set_tag_name
+        run: |
+          PACKAGE_VERSION=${{ steps.get_package_version.outputs.package_version }}
+          TAG_NAME=$(echo "$PACKAGE_VERSION" | grep -oE '[a-z]+')
+          if [[ -z "$TAG_NAME" ]]; then
+            TAG_NAME="latest"
+          fi
+          echo "::set-output name=tag_name::$TAG_NAME"
+
+      - name: Publish to NPM
+        run: |
+          TAG_NAME=${{ steps.set_tag_name.outputs.tag_name }}
+          npm publish ./dist --tag $TAG_NAME --loglevel silly
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
