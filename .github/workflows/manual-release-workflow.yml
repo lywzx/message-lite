@@ -94,6 +94,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: v${{ github.event.inputs.version }}
       - uses: actions/setup-node@v3
         with:
           always-auth: true
