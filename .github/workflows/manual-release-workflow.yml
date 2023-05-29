@@ -124,6 +124,10 @@ jobs:
           fi
           echo "::set-output name=tag_name::$TAG_NAME"
 
+      - name: npm whoami
+        run: |
+          npm whoami --registry https://registry.npmjs.org
+
       - name: Publish to NPM
         run: |
           TAG_NAME=${{ steps.set_tag_name.outputs.tag_name }}
