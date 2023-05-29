@@ -127,11 +127,6 @@ jobs:
 
       - name: npm whoami
         run: |
-          cat $NPM_CONFIG_USERCONFIG
-          rm -rf .npmrc
-          npm config ls
-          echo "NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}"
-          echo "NPM_AUTH_TOKEN FROM ENV: $NODE_AUTH_TOKEN"
           npm whoami --registry https://registry.npmjs.org
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
