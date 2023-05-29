@@ -128,7 +128,7 @@ jobs:
       - name: npm whoami
         run: |
           cat $NPM_CONFIG_USERCONFIG
-          rm -rf ./npmrc
+          rm -rf .npmrc
           npm config ls
           echo $NODE_AUTH_TOKEN
           npm whoami --registry https://registry.npmjs.org
