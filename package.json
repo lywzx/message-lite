@@ -1,6 +1,6 @@
 {
   "name": "message-lite",
-  "version": "0.10.0-alpha.19",
+  "version": "0.10.0-alpha.20",
   "description": "message lite",
   "scripts": {
     "start": "node examples/server.js --mode development",
