@@ -108,16 +108,16 @@ jobs:
       - name: Build Package
         run: yarn build
 
-      - name: Get Package Name
-        id: get_package_name
+      - name: Get Package Version
+        id: get_package_version
         run: |
-          PACKAGE_NAME=$(node -p "require('./package.json').name")
-          echo "::set-output name=package_name::$PACKAGE_NAME"
+          PACKAGE_VERSION=$(node -p "require('./package.json').name")
+          echo "::set-output name=package_version::$PACKAGE_VERSION"
 
       - name: Set Tag Name
         id: set_tag_name
         run: |
-          PACKAGE_VERSION=${{ steps.get_package_name.outputs.package_name }}
+          PACKAGE_VERSION=${{ steps.get_package_version.outputs.package_version }}
           TAG_NAME=$(echo "$PACKAGE_VERSION" | grep -oE '[a-z]+(?=[.\-]\d+)?$')
           if [[ -z "$TAG_NAME" ]]; then
             TAG_NAME="latest"
