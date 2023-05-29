@@ -126,7 +126,7 @@ jobs:
 
       - name: npm whoami
         run: |
-          cat ~/.npmrc
+          cat $NPM_CONFIG_USERCONFIG
           rm -rf ./npmrc
           npm whoami --registry https://registry.npmjs.org
         env:
