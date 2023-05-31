@@ -1,0 +1,25 @@
+name: ONLY TEST
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'New version number'
+        required: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set Tag Name
+        id: set_tag_name
+        run: |
+          PACKAGE_VERSION=${{ github.event.inputs.version }}
+          echo "PACKAGE_VERSION1: $PACKAGE_VERSION"
+          TAG_NAME=$(echo "$PACKAGE_VERSION" | grep -oE '[a-z]+')
+          echo "TAG_NAME1: $TAG_NAME"
+          if [ -z "$TAG_NAME" ]; then
+            TAG_NAME="latest"
+          fi
+          echo "PACKAGE_VERSION2: $PACKAGE_VERSION"
+          echo "TAG_NAME2: $TAG_NAME"
