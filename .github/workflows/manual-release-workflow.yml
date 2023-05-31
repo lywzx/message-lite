@@ -121,7 +121,7 @@ jobs:
         id: set_tag_name
         run: |
           PACKAGE_VERSION=${{ steps.get_package_version.outputs.package_version }}
-          TAG_NAME=$(echo "$PACKAGE_VERSION" | grep -oE '[a-z]+')
+          TAG_NAME=$(echo "$PACKAGE_VERSION" | grep -i -oE '[a-z]+')
           if [ -z "$TAG_NAME" ]; then
             TAG_NAME="latest"
           fi
