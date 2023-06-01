@@ -121,7 +121,7 @@ jobs:
         id: set_tag_name
         run: |
           PACKAGE_VERSION=${{ steps.get_package_version.outputs.package_version }}
-          TAG_NAME=$(echo "$PACKAGE_VERSION" | grep -oE '[a-z]+')
+          TAG_NAME=$(echo "$PACKAGE_VERSION" | sed -E 's/[^a-z]//g')
           if [ -z "$TAG_NAME" ]; then
             TAG_NAME="latest"
           fi
@@ -130,6 +130,6 @@ jobs:
       - name: Publish to NPM
         run: |
           TAG_NAME=${{ steps.set_tag_name.outputs.tag_name }}
-          npm publish ./dist --tag $TAG_NAME --loglevel silly
+          npm publish ./dist --tag $TAG_NAME
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
