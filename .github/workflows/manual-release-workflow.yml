@@ -130,6 +130,6 @@ jobs:
       - name: Publish to NPM
         run: |
           TAG_NAME=${{ steps.set_tag_name.outputs.tag_name }}
-          npm publish ./dist --tag $TAG_NAME --loglevel silly
+          npm publish ./dist --tag $TAG_NAME
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
