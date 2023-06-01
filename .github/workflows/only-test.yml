@@ -16,7 +16,7 @@ jobs:
         run: |
           PACKAGE_VERSION=${{ github.event.inputs.version }}
           echo "PACKAGE_VERSION1: $PACKAGE_VERSION"
-          TAG_NAME=$(echo "$PACKAGE_VERSION" | sed -E 's/[^a-z-]//g')
+          TAG_NAME=$(echo "$PACKAGE_VERSION" | sed -E 's/[^a-z]//g')
           echo "TAG_NAME1: $TAG_NAME"
           if [ -z "$TAG_NAME" ]; then
             TAG_NAME="latest"
