@@ -103,7 +103,7 @@ export abstract class ConnectSession implements IConnectSession {
    * @param name 客户端名称
    * @param eventer 事件代码
    */
-  constructor(protected readonly name = '', protected readonly eventer: IEvent) {
+  constructor(protected readonly name = `random-${uniqId()}`, protected readonly eventer: IEvent) {
     this._openedDefer = createDefer<void>();
     this._closedDefer = createDefer<void>();
     this.port1 = uniqId();
