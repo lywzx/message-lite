@@ -18,7 +18,6 @@ slave
       'click',
       (e) => {
         const eventer = slave.getService(PageEventService)!.onPageClientPos;
-        debugger;
         eventer.emit({
           x: e.x,
           y: e.y,
