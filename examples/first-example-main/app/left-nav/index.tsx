@@ -1,15 +1,17 @@
 import { ALL_APP_INFOS } from '../../constants';
 import Button from 'antd/lib/button';
 import Space from 'antd/lib/space';
-import React, { Fragment, MouseEvent } from 'react';
+import React, { Fragment, MouseEvent, useRef, useState } from 'react';
 import { AppStore } from '../../store';
 import './index.less';
 import { master } from '../../master';
 import { first } from 'lodash';
-import { AlertService } from '@example/first-children-decl';
+import { AlertService, PageEventService } from '@example/first-children-decl';
 
 export function LeftNav() {
   const { addNewApp, appState } = AppStore.useContainer();
+  const [currentClicked, updateClicked] = useState<null | { x: number; y: number }>(null);
+  const ref = useRef<null | (() => any)>();
 
   return (
     <Space direction="vertical" style={{ width: '100%' }}>
@@ -27,6 +29,24 @@ export function LeftNav() {
               description: '提示消息',
             });
           };
+
+          const watchPageClick = (e: MouseEvent) => {
+            e.preventDefault();
+            const app = first(master.getSession(current.id))!;
+            const service = app.getService(PageEventService);
+            ref.current = service.onPageClientPos.on((pos) => {
+              updateClicked(pos);
+            });
+            updateClicked({ x: 0, y: 0 });
+          };
+          const unWatchPageClick = (e: MouseEvent) => {
+            e.preventDefault();
+            if (ref.current) {
+              ref.current();
+              ref.current = null;
+            }
+            updateClicked(null);
+          };
           appService = (
             <ul className="app-child-api">
               <li>
@@ -34,6 +54,16 @@ export function LeftNav() {
                   打印消息
                 </a>
               </li>
+              <li>
+                <a href="" onClick={currentClicked ? unWatchPageClick : watchPageClick}>
+                  {currentClicked ? '取消监听' : '监听页面点击'}
+                </a>
+              </li>
+              {currentClicked && (
+                <li>
+                  点击位置为, x: {currentClicked.x}; y: {currentClicked.y}
+                </li>
+              )}
             </ul>
           );
         }

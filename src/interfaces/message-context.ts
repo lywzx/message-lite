@@ -31,7 +31,7 @@ export interface IMessageContextConstructor {
 /**
  * message context
  */
-export interface IMessageContext extends IEvent {
+export interface IMessageContext extends IEvent<any> {
   /**
    * 启动
    */

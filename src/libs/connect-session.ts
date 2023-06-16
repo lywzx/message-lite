@@ -20,7 +20,6 @@ import {
   IWaitMessageResponseOption,
 } from '../interfaces';
 import { uniqId, createPort } from '../util';
-import { ServiceEventer, ServiceEventerInnerEmit } from './service-eventer';
 import {
   EMessageTypeEvent,
   EMessageTypeResponse,
@@ -103,7 +102,7 @@ export abstract class ConnectSession implements IConnectSession {
    * @param name 客户端名称
    * @param eventer 事件代码
    */
-  constructor(protected readonly name = `random-${uniqId()}`, protected readonly eventer: IEvent) {
+  constructor(protected readonly name = '', protected readonly eventer: IEvent<any>) {
     this._openedDefer = createDefer<void>();
     this._closedDefer = createDefer<void>();
     this.port1 = uniqId();
@@ -285,17 +284,8 @@ export abstract class ConnectSession implements IConnectSession {
     if (serviceMap.has(name)) {
       return this.getServiceByServiceName(name);
     }
-    const service = createSlaveService(this.messageContext, this, serv, ServiceEventer);
+    const service = createSlaveService(this.messageContext, this, serv, eventer);
     serviceMap.set(name, service);
-    info.events.forEach((evt) => {
-      const evtName = createMessageEventName({
-        service: name,
-        event: evt.name,
-      });
-      eventer.on(evtName, (...args: any) => {
-        (service as any)[evt.name][ServiceEventerInnerEmit](...args);
-      });
-    });
     return service;
   }
 

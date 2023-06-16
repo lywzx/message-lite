@@ -3,7 +3,7 @@ import { getApiDeclInfo, IApiDeclFullApi } from './api-decl';
 import {
   IAddService,
   IConnectSession,
-  IEventerConstructor,
+  IEvent,
   IMessageCallData,
   IMessageContext,
   IMessageEvent,
@@ -21,19 +21,20 @@ import {
   EMessageTypeResponseException,
 } from '../constant';
 import { MBaseService } from '../service/m-base-service';
+import { createMasterEvent, createSlaveEvent } from './create-eventer';
 
 /**
  * 获取调用服务
  * @param messageContext
  * @param session
  * @param serv
- * @param eventer
+ * @param event
  */
 export function createSlaveService<T extends MBaseService>(
   messageContext: IMessageContext,
   session: IConnectSession,
   serv: Class<T>,
-  eventer: IEventerConstructor<any>
+  event: IEvent<any>
 ) {
   const s = new serv();
   const impl = getApiDeclInfo(serv);
@@ -71,24 +72,38 @@ export function createSlaveService<T extends MBaseService>(
       event: evtName,
     };
     const eventName = createMessageEventName(opt, false);
-    const evter = ((s as any)[evtName] = new eventer({
-      eventName,
-      whenListened() {
+
+    const { senderDataToInternal, eventer: serviceEventer } = createSlaveEvent<any>({
+      whenListened(): void {
         messageContext.on(eventName, (...args: any[]) => {
-          evter.emit(args[0]);
+          event.emit(eventName, args[0]);
         });
         session.sendMessage<Omit<IMessageEvent, 'id'>>({
           type: EMessageTypeEventOn,
           ...opt,
         });
       },
-      whenUnListened() {
+      whenUnListened(): void {
+        messageContext.off(eventName);
         session.sendMessage<Omit<IMessageEvent, 'id'>>({
           type: EMessageTypeEventOff,
           ...opt,
         });
       },
-    }));
+      whenEmitData(data) {
+        messageContext.broadcast({
+          service: impl.name,
+          event: evtName,
+          data: data.data,
+        });
+      },
+      eventName,
+      eventer: event,
+    });
+
+    (s as any)[evtName] = serviceEventer;
+
+    event.on(eventName, senderDataToInternal);
   });
   return s;
 }
@@ -116,15 +131,16 @@ export function createMasterService<T extends MBaseService>(
   // 处理事件
   impl.events.forEach((evt) => {
     const evtName = evt.name;
-    (s as any)[evtName] = {
-      emit(data: any) {
+    (s as any)[evtName] = createMasterEvent({
+      eventName: evtName,
+      whenEmitData(data) {
         messageContext.broadcast({
           service: impl.name,
-          event: evtName,
-          data,
+          event: data.eventName,
+          data: data.data,
         });
       },
-    };
+    });
   });
 
   return s;

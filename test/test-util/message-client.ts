@@ -38,7 +38,7 @@ export function createServe() {
  * create slave client
  * @param globalEvent
  */
-export function createClient(globalEvent: IEvent) {
+export function createClient(globalEvent: IEvent<any>) {
   const currentEvent = new EventEmitter();
   return new Slave({
     listenMessage(fn: (message: any) => void): void {
