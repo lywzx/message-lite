@@ -1,25 +1,13 @@
 import { IEvent, IEventCallback } from '../interfaces';
-
-/**
- * when event listen
- */
-export const EventOn = Symbol('when-event-on');
-/**
- * when event off listen
- */
-export const EventOff = Symbol('when-event-off');
-/**
- * when event all off
- */
-export const EventOffAll = Symbol('when-event-off-all');
+import { EventOff, EventOffAll, EventOn } from '../constant';
 
 const eventOnOrOffSet = new Set([EventOff, EventOn, EventOffAll]);
 const isExcludeEvent = (event: string | symbol) => eventOnOrOffSet.has(event as unknown as any);
 
-export class EventEmitter implements IEvent {
+export class EventEmitter implements IEvent<any> {
   protected eventer: Map<string | symbol, Array<{ callback: IEventCallback; once: boolean }>> = new Map();
 
-  on(event: string | symbol, fn: (...args: any[]) => any, once = false) {
+  on(event: any, fn: (...args: any[]) => any, once = false) {
     const { eventer } = this;
     const callbacks = eventer.get(event) || [];
     if (!callbacks.find((it) => it.callback === fn && it.once === once)) {
@@ -34,7 +22,7 @@ export class EventEmitter implements IEvent {
     eventer.set(event, callbacks);
   }
 
-  off(event: string | symbol, fn?: IEventCallback, once?: boolean) {
+  off(event: any, fn?: IEventCallback, once?: boolean) {
     const { eventer } = this;
     if (eventer.has(event)) {
       const callbacks = eventer.get(event)!;
@@ -65,11 +53,11 @@ export class EventEmitter implements IEvent {
     }
   }
 
-  once(event: string | symbol, fn: IEventCallback) {
+  once(event: any, fn: IEventCallback) {
     this.on(event, fn, true);
   }
 
-  emit(event: string | symbol, ...args: any[]) {
+  emit(event: any, ...args: any[]) {
     const callback = this.eventer.get(event) || [];
     callback.forEach((option) => {
       const { once, callback } = option;

@@ -1,16 +1,16 @@
 /**
  * event callback
  */
-export type IEventCallback = (...args: any[]) => any;
+export type IEventCallback<V = any> = (...args: V[]) => any;
 
 /**
  * evente interface
  */
-export interface IEvent {
+export interface IEvent<T extends Record<any, any> = any> {
   /**
    * 监听事件
    */
-  on(name: string, callback: IEventCallback, once?: boolean): void;
+  on<K extends keyof T>(name: K, callback: IEventCallback<T[K]>, once?: boolean): void;
 
   /**
    * 取消监听事件
@@ -18,7 +18,7 @@ export interface IEvent {
    * @param callback
    * @param once
    */
-  off(name: string, callback: IEventCallback, once?: boolean): void;
+  off<K extends keyof T>(name: K, callback?: IEventCallback<T[K]>, once?: boolean): void;
 
   /**
    * 监听单次事件
@@ -26,17 +26,21 @@ export interface IEvent {
    * @param callback
    * @param once
    */
-  once(name: string, callback: IEventCallback): void;
+  once<K extends keyof T>(name: K, callback: IEventCallback<T[K]>): void;
 
   /**
    * 触发事件
    * @param name
    * @param args
    */
-  emit(name: string, ...args: any[]): void;
+  emit<K extends keyof T>(name: K, ...args: Array<T[K]>): void;
 
   /**
    * 清除所有事件
    */
   dispose(): void;
+}
+
+export interface IEventConstructor<T = any> {
+  new (): IEvent<T>;
 }

@@ -1,7 +1,8 @@
 import { test } from 'mocha';
 import { expect } from 'chai';
-import { EventEmitter, EventOff, EventOffAll, EventOn } from '../src/libs';
+import { EventEmitter } from '../src/libs';
 import { fake } from 'sinon';
+import { EventOff, EventOffAll, EventOn } from '../src/constant';
 
 describe('#event test impl', () => {
   const eventName = 'testEventName';

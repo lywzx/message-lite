@@ -32,7 +32,7 @@ export interface IMasterClientConnectOption extends ITimeout {
   /**
    * 生命周期的事件
    */
-  lifeCircleEvent?: IEvent;
+  lifeCircleEvent?: IEvent<any>;
 }
 
 export class MasterClient extends ConnectSession {

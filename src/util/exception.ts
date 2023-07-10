@@ -2,7 +2,7 @@
  * 报错
  * @param message
  */
-export function throwException(message: string) {
+export function throwException(message: string): never {
   throw new Error(message);
 }
 
