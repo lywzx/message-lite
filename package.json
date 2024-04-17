@@ -1,9 +1,9 @@
 {
   "name": "message-lite",
-  "version": "0.10.5-alpha.1",
+  "version": "0.10.5-alpha.2",
   "description": "message lite",
   "scripts": {
-    "start": "node examples/server.js --mode development",
+    "start": "node --openssl-legacy-provider examples/server.js --mode development",
     "dev": "node --max_old_space_size=8192 node_modules/rollup/dist/bin/rollup -w -c node_modules/@lywzx/rollup-build-scripts/rollup.config.js --only-entry=minify,cjs",
     "build": "node --max-old-space-size=8192 node_modules/@lywzx/rollup-build-scripts/index.js",
     "lint": "eslint src --ext .ts --fix",

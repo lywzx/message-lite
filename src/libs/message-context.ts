@@ -35,7 +35,7 @@ export class MessageContext extends EventEmitter implements IMessageContext {
 
   protected isReady = false;
 
-  protected t: (message: any) => any;
+  protected t: (...message: any[]) => any;
 
   constructor(protected readonly option: Omit<IMessageConfig, 'createSender'>) {
     super();
@@ -79,8 +79,8 @@ export class MessageContext extends EventEmitter implements IMessageContext {
    * receive message hand method
    * @param originMessage
    */
-  private handMessage = (originMessage: any) => {
-    const message = this.t(originMessage);
+  private handMessage = (...originMessage: any[]) => {
+    const message = this.t(...originMessage);
 
     if (messageHelper(message)) {
       // 连接类消息
@@ -99,7 +99,7 @@ export class MessageContext extends EventEmitter implements IMessageContext {
       switch (type) {
         case EMessageTypeHandshake: {
           // 建立连接
-          this.emit(WILL_CONNECT, message, originMessage);
+          this.emit(WILL_CONNECT, message, ...originMessage);
           break;
         }
         case EMessageTypeGoodBye: {
