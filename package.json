@@ -1,6 +1,6 @@
 {
   "name": "message-lite",
-  "version": "0.10.5-alpha.2",
+  "version": "0.10.5-alpha.3",
   "description": "message lite",
   "scripts": {
     "start": "node --openssl-legacy-provider examples/server.js --mode development",
