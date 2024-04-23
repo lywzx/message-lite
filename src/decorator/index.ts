@@ -22,7 +22,7 @@ export interface IApiDeclOption {
  *
  */
 export function ApiDecl(option: IApiDeclOption) {
-  return function <T extends MBaseService>(target: Class<T>) {
+  return function <T extends MBaseService, U extends { new (...args: any[]): T }>(target: U) {
     InnerApiDecl(target, option.name);
   };
 }
@@ -74,7 +74,7 @@ export function ApiDeclEvent(option: Omit<IApiDeclFullApiEvent, 'name'> = {}) {
  * @param option
  */
 export function ApiImpl() {
-  return function <T extends MBaseService>(serv: Class<T>) {
+  return function <T extends MBaseService, U extends { new (...args: any[]): T }>(serv: U): U {
     const message = `class ${serv.name} should extends impl service`;
     try {
       getApiDeclInfo(serv, false);
