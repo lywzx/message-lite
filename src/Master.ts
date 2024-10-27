@@ -37,7 +37,7 @@ export class Master extends BasicServer {
     return service!;
   }
 
-  protected whenNewClientConnected = async (message: IMessageHandshakeData, originMessage: any) => {
+  protected whenNewClientConnected = async (message: IMessageHandshakeData, ...originMessage: any[]) => {
     const { messageContext, option } = this;
 
     const { channel, data } = message;
@@ -47,7 +47,7 @@ export class Master extends BasicServer {
     }
     const info = parsePort(channel);
     const session = new MasterClient(info.name, new EventEmitter());
-    session.initSender(option.createSender(originMessage));
+    session.initSender(option.createSender(...originMessage));
 
     await session.connect({
       message: data,

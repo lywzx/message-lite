@@ -68,7 +68,7 @@ export class SimpleMix extends BasicServer {
     return this.session.getService(serv);
   }
 
-  private whenNewClientConnected = (message: IMessageHandshakeData, originMessage: any) => {
+  private whenNewClientConnected = (message: IMessageHandshakeData, ...originMessage: any[]) => {
     const { session, option, messageContext } = this;
     if (!session) {
       return;
@@ -89,7 +89,7 @@ export class SimpleMix extends BasicServer {
     if (info.name === session.getName() && info.port1 === ports[0] && info.port2 === ports[1]) {
       session.port1 = ports[1];
       session.port2 = ports[0];
-      session.initSender(option.createSender(originMessage));
+      session.initSender(option.createSender(...originMessage));
       messageContext.attachSession(session);
       (session as SimpleClient)
         .connect({
