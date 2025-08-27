@@ -7,9 +7,22 @@
 [![Known Vulnerabilities](https://snyk.io/test/github/lywzx/message-lite/badge.svg?targetFile=package.json)](https://snyk.io/test/github/lywzx/message-lite?targetFile=package.json)
 [![License](https://img.shields.io/npm/l/message-lite.svg?sanitize=true)](https://www.npmjs.com/package/message-lite)
 
-message-lite是一个RPC通信库
+message-lite是一个轻量级的RPC通信库，用于在浏览器环境中实现跨上下文通信，如iframe或window之间的双向通信。
 
-# 开速开始
+## 特性
+
+- 支持服务器+客户端模式（一对多）
+- 支持客户端+客户端模式（一对一）
+- 提供服务声明、实现、注册、调用机制
+- 支持异步通信和事件监听
+- 基于TypeScript编写，提供完整的类型定义
+- 使用装饰器简化服务定义和实现
+
+## 待支持的特性
+
+- 心跳
+- 断线重连
+- 连接过程中的日志输出
 
 ## 安装
 
@@ -18,7 +31,15 @@ message-lite是一个RPC通信库
 yarn add message-lite # or：npm install message-lite --save
 ```
 
-# 使用方法
+## 核心概念
+
+message-lite 提供了三种核心通信类：
+
+1. **Master**: 主服务端，用于一对多通信场景
+2. **Slave**: 客户端，连接到Master
+3. **SimpleMix**: 简单混合模式，用于一对一通信场景
+
+## 使用方法
 
 `message-lite`支持双向通信，支持两个模式：
 
@@ -214,3 +235,289 @@ client2.connect().then(() => {
 
 与服务器+客户端模式一样，以上两个客户端均支持`addService`以及`getService`方法。可以很容易添加服务及调用服务。
 
+## 详细示例
+
+### 服务声明与实现
+
+服务声明定义了可以远程调用的接口：
+
+```typescript
+// message.service.ts
+import { ApiDecl, ApiDeclApi, ApiUnSupport, MBaseService } from 'message-lite';
+
+export interface IMessageOption {
+  content: string;
+  duration?: number;
+  waitingClose?: boolean;
+}
+
+export type ImessageServiceType = string | IMessageOption;
+
+@ApiDecl({
+  name: 'com.example.message.service',
+})
+export class MessageService extends MBaseService {
+  @ApiDeclApi()
+  info(content: ImessageServiceType): Promise<void> {
+    return ApiUnSupport();
+  }
+
+  @ApiDeclApi()
+  success(content: ImessageServiceType): Promise<void> {
+    return ApiUnSupport();
+  }
+
+  @ApiDeclApi()
+  error(content: ImessageServiceType): Promise<void> {
+    return ApiUnSupport();
+  }
+}
+```
+
+服务实现提供了具体的功能实现：
+
+```typescript
+// message.service.impl.ts
+import { IMessageOption, ImessageServiceType, MessageService } from '@example/first-example-decl';
+import { message as antdMessage } from 'antd';
+import { isString } from 'lodash';
+import { ApiImpl } from 'message-lite';
+
+@ApiImpl()
+export class MessageServiceImpl extends MessageService {
+  info(content: ImessageServiceType): Promise<void> {
+    return showAntdMessage(content, 'info');
+  }
+
+  success(content: ImessageServiceType): Promise<void> {
+    return showAntdMessage(content, 'success');
+  }
+
+  error(content: ImessageServiceType): Promise<void> {
+    return showAntdMessage(content, 'error');
+  }
+}
+```
+
+### 服务事件声明与使用
+
+除了方法调用，message-lite 还支持服务事件的声明和使用：
+
+```typescript
+// screen.service.ts
+import { ApiDecl, ApiDeclEvent, IEventer, MBaseService } from 'message-lite';
+
+export interface IScreenInfo {
+  width: number;
+  height: number;
+}
+
+@ApiDecl({
+  name: 'ui.screen.watcher',
+})
+export class ScreenService extends MBaseService {
+  @ApiDeclEvent()
+  watcher!: IEventer<IScreenInfo>;
+}
+```
+
+服务事件的实现：
+
+```typescript
+// screen.service.impl.ts
+import { ScreenService, IScreenInfo } from '@example/first-example-decl';
+import { ApiImpl } from 'message-lite';
+
+@ApiImpl()
+export class ScreenServiceImpl extends ScreenService {
+  // 事件不需要特殊实现，框架会自动处理
+}
+```
+
+服务事件的使用：
+
+```typescript
+// 在客户端使用服务事件
+slave.connect().then(async () => {
+  const service = slave.getService(ScreenService);
+  
+  // 监听事件
+  const unsubscribe = service.watcher.on((screenInfo: IScreenInfo) => {
+    console.log('屏幕尺寸变化:', screenInfo.width, screenInfo.height);
+  });
+  
+  // 在需要时取消监听
+  // unsubscribe();
+});
+```
+
+### Master服务端使用示例
+
+```typescript
+// master/index.ts
+import { Master } from 'message-lite';
+import { ALL_SERVICE } from '../core/impl';
+
+export const master = new Master({
+  createSender(event: MessageEvent) {
+    return (message: any) => {
+      (event.source as WindowProxy)!.postMessage(message, '*', []);
+    };
+  },
+  listenMessage(fn) {
+    window.addEventListener('message', fn, false);
+  },
+  unListenMessage(fn) {
+    window.removeEventListener('message', fn, false);
+  },
+  transformMessage(event: MessageEvent) {
+    return event.data;
+  },
+});
+
+// 添加服务并启动
+master.addService(ALL_SERVICE).start();
+```
+
+### Slave客户端使用示例
+
+```typescript
+// slave/index.ts
+import { Slave } from 'message-lite';
+import { AlertService } from '@example/first-children-decl';
+import { AlertServiceImpl } from '../core/impl/alert.service.impl';
+
+export const slave = new Slave({
+  createSender() {
+    return (message: any) => window.parent!.postMessage(message, '*', []);
+  },
+  listenMessage(fn) {
+    window.addEventListener('message', fn, false);
+  },
+  unListenMessage(fn: (message: any) => void): void {
+    window.removeEventListener('message', fn, false);
+  },
+  transformMessage(message: MessageEvent) {
+    return message.data;
+  },
+}).addService([
+  {
+    decl: AlertService,
+    impl: AlertServiceImpl,
+  },
+]);
+```
+
+### 完整使用流程
+
+```typescript
+// 客户端连接并使用服务
+slave.connect().then(async () => {
+  // 获取服务实例
+  const service = slave.getService(AlertService);
+  
+  // 调用远程服务
+  await service.alert({
+    message: '测试', 
+    description: '服务测试'
+  });
+});
+```
+
+### 事件监听
+
+Master支持事件监听机制：
+
+```typescript
+// 监听连接事件
+import { CONNECTED, CONNECTED_FAILED, DISCONNECT, IConnectSession } from 'message-lite';
+
+master.on(CONNECTED, (session: IConnectSession) => {
+  console.log('客户端已连接', session.id);
+});
+
+master.on(CONNECTED_FAILED, (session: IConnectSession) => {
+  console.log('客户端连接失败', session.id);
+});
+
+master.on(DISCONNECT, (session: IConnectSession) => {
+  console.log('客户端断开连接', session.id);
+});
+
+// 取消监听事件
+const connectedHandler = (session: IConnectSession) => {
+  console.log('客户端已连接', session.id);
+};
+
+master.on(CONNECTED, connectedHandler);
+// 在需要取消监听时
+master.off(CONNECTED, connectedHandler);
+```
+
+### 自定义事件
+
+除了系统事件，还可以使用自定义事件：
+
+```typescript
+// 发送自定义事件
+master.emit('custom-event', { data: 'custom data' });
+
+// 监听自定义事件
+master.on('custom-event', (data) => {
+  console.log('收到自定义事件:', data);
+});
+```
+
+## API参考
+
+### Master类
+
+- `constructor(transport: IMessageTransport)` - 创建Master实例
+- `addService(services: IAddService | IAddService[]): this` - 添加服务
+- `getService<T>(decl: new () => T): T` - 获取服务实例
+- `start(): Promise<void>` - 启动服务端
+- `disconnect(): Promise<void>` - 断开所有连接
+- `on(event: string, handler: (...args: any[]) => void): void` - 监听事件
+- `off(event: string, handler: (...args: any[]) => void): void` - 取消监听事件
+- `emit(event: string, ...args: any[]): void` - 触发事件
+- `getSession(clientId: string): any | undefined` - 获取客户端会话
+
+### Slave类
+
+- `constructor(transport: IMessageTransport, clientId?: string)` - 创建Slave实例
+- `addService(services: any | any[]): this` - 添加服务
+- `getService<T>(decl: new () => T): T` - 获取服务实例
+- `connect(): Promise<void>` - 连接到Master
+- `disconnect(): Promise<void>` - 断开连接
+
+### SimpleMix类
+
+- `constructor(options: SimpleMixOptions)` - 创建SimpleMix实例
+- `addService(services: any | any[]): this` - 添加服务
+- `getService<T>(decl: new () => T): T` - 获取服务实例
+- `waitConnect(): Promise<void>` - 等待其他客户端连接（作为连接接收方）
+- `connect(): Promise<void>` - 主动连接到其他客户端（作为连接发起方）
+- `disconnect(): Promise<void>` - 断开连接
+
+### 装饰器
+
+- `@ApiDecl(options)` - 服务声明装饰器
+- `@ApiImpl()` - 服务实现装饰器
+- `@ApiDeclApi()` - API声明装饰器
+- `@ApiDeclEvent()` - 事件声明装饰器
+
+### 常量
+
+- `CONNECTED` - 连接成功事件
+- `CONNECTED_FAILED` - 连接失败事件
+- `DISCONNECT` - 断开连接事件
+
+### 接口
+
+- `IConnectSession` - 连接会话接口
+- `IAddService` - 服务添加接口
+- `IEventer<T>` - 事件接口
+
+## 许可证
+
+MIT
