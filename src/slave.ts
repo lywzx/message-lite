@@ -1,4 +1,5 @@
 import { EventEmitter } from './utils/event-emitter';
+import { Eventer } from './utils/eventer';
 import { createDefer, generateId, IDefer } from './utils';
 import { 
   IMessageTransport, 
@@ -7,7 +8,7 @@ import {
   MessageType 
 } from './interfaces';
 import { DEFAULT_TIMEOUT } from './constants';
-import { getApiDecl, getApiMethods, isApiImpl } from './decorators';
+import { getApiDecl, getApiMethods, getApiEvents, isApiImpl } from './decorators';
 
 /**
  * Slave客户端类，连接到Master
@@ -23,11 +24,9 @@ export class Slave extends EventEmitter {
   private connectDefer: IDefer<void> | null = null;
   private availableServices: Set<string> = new Set();
 
-  constructor(transport: IMessageTransport, clientId?: string) {
+  constructor(transport: IMessageTransport) {
     super();
     this.transport = transport;
-    // 如果未提供clientId或为空字符串，则设为null，让Master分配
-    this.clientId = (clientId && clientId.trim()) || '';
   }
 
   /**
@@ -60,6 +59,26 @@ export class Slave extends EventEmitter {
   }
 
   /**
+   * 检查服务是否存在
+   */
+  hasService(decl: new () => any): boolean {
+    const declInfo = getApiDecl(decl);
+    if (!declInfo) {
+      return false;
+    }
+    
+    const serviceName = declInfo.name;
+    
+    // 检查本地服务
+    if (this.serviceInstances.has(serviceName)) {
+      return true;
+    }
+    
+    // 检查远程服务
+    return this.availableServices.has(serviceName);
+  }
+
+  /**
    * 获取服务实例（优先返回本地服务，然后是远程服务）
    */
   getService<T>(decl: new () => T): T {
@@ -81,7 +100,19 @@ export class Slave extends EventEmitter {
     
     // 检查是否是可用的远程服务
     if (!this.availableServices.has(serviceName)) {
-      throw new Error(`Service ${serviceName} is not available on master`);
+      // 对于事件服务，即使不在远程服务列表中，也允许创建代理
+      // 这样 Slave 可以监听来自 Master 的事件广播
+      const events = getApiEvents(decl);
+      if (events.size > 0) {
+        console.log(`Creating event service proxy for ${serviceName} (not in remote services list)`);
+        const proxy = this.createEventServiceProxy(decl, serviceName);
+        this.serviceProxies.set(serviceName, proxy);
+        return proxy;
+      }
+      
+      const availableServices = Array.from(this.availableServices);
+      const localServices = Array.from(this.serviceInstances.keys());
+      throw new Error(`Service ${serviceName} is not available. Local services: ${localServices.join(', ')}. Remote services: ${availableServices.join(', ')}`);
     }
     
     console.log(`Creating remote service proxy for ${serviceName}`);
@@ -98,17 +129,11 @@ export class Slave extends EventEmitter {
     return proxy;
   }
 
-  /**
-   * 获取当前客户端ID
-   */
-  getClientId(): string {
-    return this.clientId;
-  }
 
   /**
    * 连接到Master
    */
-  async connect(options: any = {}): Promise<void> {
+  async connect(options: { name?: string } = {}): Promise<void> {
     if (this.connected) {
       return;
     }
@@ -121,13 +146,13 @@ export class Slave extends EventEmitter {
     
     try {
       // 开始监听消息
-      this.transport.listenMessage(this.handleMessage.bind(this));
+      this.transport.listenMessage(this.handleMessage);
       
       // 发送连接请求
       const connectMessage: IMessage = {
         id: generateId(),
         type: MessageType.CONNECT,
-        clientId: this.clientId || undefined, // 如果为空则不发送clientId，让Master分配
+        clientId: options.name, // 如果为空则不发送clientId，让Master分配
         data: { 
           services: Array.from(this.services.keys()),
           name: options.name || this.clientId || 'anonymous-client'
@@ -150,7 +175,7 @@ export class Slave extends EventEmitter {
       clearTimeout(timeout);
       
     } catch (error) {
-      this.transport.unListenMessage(this.handleMessage.bind(this));
+      this.transport.unListenMessage(this.handleMessage);
       this.connectDefer = null;
       throw error;
     }
@@ -180,7 +205,7 @@ export class Slave extends EventEmitter {
       console.error('Error sending disconnect message:', error);
     } finally {
       this.connected = false;
-      this.transport.unListenMessage(this.handleMessage.bind(this));
+      this.transport.unListenMessage(this.handleMessage);
       this.serviceProxies.clear();
       this.availableServices.clear();
       this.pendingCalls.clear();
@@ -190,7 +215,7 @@ export class Slave extends EventEmitter {
   /**
    * 处理消息
    */
-  private handleMessage(rawMessage: any): void {
+  private handleMessage = (rawMessage: any): void => {
     try {
       const transformedMessage = this.transport.transformMessage(rawMessage);
       
@@ -215,6 +240,9 @@ export class Slave extends EventEmitter {
           break;
         case MessageType.CALL:
           this.handleCall(message);
+          break;
+        case MessageType.EVENT:
+          this.handleEvent(message);
           break;
         case MessageType.HEARTBEAT:
           this.handleHeartbeat(message);
@@ -340,6 +368,31 @@ export class Slave extends EventEmitter {
   }
 
   /**
+   * 处理事件
+   */
+  private handleEvent(message: IMessage): void {
+    const { service, method, data } = message;
+    
+    if (!service || !method) {
+      return;
+    }
+    
+    // 查找对应的服务代理并触发事件
+    const serviceProxy = this.serviceProxies.get(service);
+    if (serviceProxy && serviceProxy[method]) {
+      // 如果服务代理存在且有对应的事件方法，触发事件
+      serviceProxy[method].emit(data);
+    } else {
+      // 如果服务代理不存在，创建一个临时的事件发射器来处理事件
+      // 这样即使没有显式订阅服务，也能接收事件
+      console.log(`Received event from service ${service}.${method}:`, data);
+      
+      // 可以在这里添加全局事件处理逻辑
+      // 例如：this.emit('remoteEvent', { service, method, data });
+    }
+  }
+
+  /**
    * 处理心跳
    */
   private handleHeartbeat(message: IMessage): void {
@@ -353,6 +406,33 @@ export class Slave extends EventEmitter {
     
     const sender = this.transport.createSender();
     sender(heartbeatResponse);
+  }
+
+  /**
+   * 创建事件服务代理（用于监听来自Master的事件广播）
+   */
+  private createEventServiceProxy<T>(decl: new () => T, serviceName: string): T {
+    const events = getApiEvents(decl);
+    const proxy = {} as T;
+    
+    // 为每个事件创建代理
+    events.forEach((eventName: string) => {
+      // 创建本地事件发射器来接收来自Master的事件
+      const eventer = new Eventer();
+      
+      (proxy as any)[eventName] = {
+        on: (listener: (data: any) => void) => {
+          // 订阅本地事件
+          return eventer.on(listener);
+        },
+        emit: (data: any) => {
+          // 触发本地事件（通常由handleEvent调用）
+          eventer.emit(data);
+        }
+      };
+    });
+    
+    return proxy;
   }
 
   /**

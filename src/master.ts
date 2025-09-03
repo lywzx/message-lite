@@ -1,14 +1,16 @@
 import { EventEmitter } from './utils/event-emitter';
+import { Eventer } from './utils/eventer';
 import { createDefer, generateId, IDefer } from './utils';
 import { 
   IMessageTransport, 
   IConnectSession, 
   IAddService, 
   IMessage, 
-  MessageType 
+  MessageType,
+  IRpcContext
 } from './interfaces';
 import { CONNECTED, CONNECTED_FAILED, DISCONNECT } from './constants';
-import { getApiDecl, getApiMethods, isApiImpl } from './decorators';
+import { getApiDecl, getApiMethods, getApiEvents, isApiImpl } from './decorators';
 
 /**
  * Master服务端类，用于一对多通信
@@ -19,6 +21,7 @@ export class Master extends EventEmitter {
   private services: Map<string, any> = new Map();
   private serviceInstances: Map<string, any> = new Map();
   private pendingCalls: Map<string, IDefer> = new Map();
+  private slaveEventEmitters: Map<string, Eventer> = new Map();
   private started = false;
 
   constructor(transport: IMessageTransport) {
@@ -56,7 +59,19 @@ export class Master extends EventEmitter {
   }
 
   /**
-   * 获取服务实例
+   * 检查服务是否存在
+   */
+  hasService(decl: new () => any): boolean {
+    const declInfo = getApiDecl(decl);
+    if (!declInfo) {
+      return false;
+    }
+    
+    return this.serviceInstances.has(declInfo.name);
+  }
+
+  /**
+   * 获取服务实例（用于事件广播，与addService注册的服务无关）
    */
   getService<T>(decl: new () => T): T {
     const declInfo = getApiDecl(decl);
@@ -64,12 +79,38 @@ export class Master extends EventEmitter {
       throw new Error(`Service ${decl.name} is not decorated with @ApiDecl`);
     }
     
-    const instance = this.serviceInstances.get(declInfo.name);
-    if (!instance) {
-      throw new Error(`Service ${declInfo.name} not found`);
+    // 创建一个独立的服务实例，专门用于事件广播
+    return this.createBroadcastServiceProxy(decl);
+  }
+
+  /**
+   * 获取Slave服务实例（用于调用Slave的方法和监听Slave的事件）
+   */
+  getSlaveService<T>(decl: new () => T, clientId?: string): T {
+    const declInfo = getApiDecl(decl);
+    if (!declInfo) {
+      throw new Error(`Service ${decl.name} is not decorated with @ApiDecl`);
     }
     
-    return instance;
+    const serviceName = declInfo.name;
+    
+    // 如果指定了clientId，获取特定Slave的服务
+    if (clientId) {
+      const session = this.sessions.get(clientId);
+      if (!session) {
+        throw new Error(`Client ${clientId} not found`);
+      }
+      return this.createSessionServiceProxy(decl, session);
+    }
+    
+    // 如果没有指定clientId，获取第一个可用的Slave服务
+    const sessions = Array.from(this.sessions.values());
+    if (sessions.length === 0) {
+      throw new Error(`No connected clients available for service ${serviceName}`);
+    }
+    
+    // 返回第一个连接客户端的服务代理
+    return this.createSessionServiceProxy(decl, sessions[0]);
   }
 
   /**
@@ -81,7 +122,7 @@ export class Master extends EventEmitter {
     }
     
     this.started = true;
-    this.transport.listenMessage(this.handleMessage.bind(this));
+    this.transport.listenMessage(this.handleMessage);
   }
 
   /**
@@ -93,7 +134,7 @@ export class Master extends EventEmitter {
     }
     
     this.started = false;
-    this.transport.unListenMessage(this.handleMessage.bind(this));
+    this.transport.unListenMessage(this.handleMessage);
     
     // 断开所有连接
     for (const session of this.sessions.values()) {
@@ -113,6 +154,8 @@ export class Master extends EventEmitter {
    */
   getSession(clientId: string): IConnectSession[] {
     const session = this.sessions.get(clientId);
+    console.log(`Getting session for client ${clientId}:`, session);
+    console.log(`Available sessions:`, Array.from(this.sessions.keys()));
     return session ? [session] : [];
   }
 
@@ -160,7 +203,7 @@ export class Master extends EventEmitter {
   /**
    * 处理消息
    */
-  private handleMessage(rawMessage: any): void {
+  private handleMessage = (rawMessage: any): void => {
     try {
       const transformedMessage = this.transport.transformMessage(rawMessage);
       
@@ -185,6 +228,9 @@ export class Master extends EventEmitter {
           break;
         case MessageType.ERROR:
           this.handleError(message);
+          break;
+        case MessageType.EVENT:
+          this.handleEvent(message);
           break;
         case MessageType.HEARTBEAT:
           this.handleHeartbeat(message);
@@ -283,8 +329,20 @@ export class Master extends EventEmitter {
         throw new Error(`Method ${method} not found in service ${service}`);
       }
 
-      // 调用服务方法
-      const result = await methodHandler.apply(serviceInstance, args || []);
+      // 创建RPC执行上下文
+      const context: IRpcContext = {
+        clientId: session.id,
+        origin: session.origin,
+        metadata: session.metadata,
+        timestamp: message.timestamp || Date.now(),
+        service,
+        method,
+        messageId: id
+      };
+      
+      // 调用服务方法，传递上下文作为最后一个参数
+      const methodArgs = args || [];
+      const result = await methodHandler.apply(serviceInstance, [...methodArgs, context]);
       
       console.log(`Master call result for ${service}.${method}:`, result);
       
@@ -324,6 +382,28 @@ export class Master extends EventEmitter {
     const { clientId } = message;
     if (clientId) {
       this.disconnectSession(clientId).catch(console.error);
+    }
+  }
+
+  /**
+   * 处理事件
+   */
+  private handleEvent(message: IMessage): void {
+    const { service, method, data, clientId } = message;
+    
+    if (!service || !method || !clientId) {
+      return;
+    }
+    
+    // 查找对应的Slave事件发射器并触发事件
+    const eventKey = `slave_${clientId}_${service}_${method}`;
+    const eventer = this.slaveEventEmitters.get(eventKey);
+    
+    if (eventer) {
+      // 触发事件，通知Master上订阅了该事件的监听器
+      eventer.emit(data);
+    } else {
+      console.log(`Master received event from slave ${clientId}: ${service}.${method}`, data);
     }
   }
 
@@ -400,6 +480,77 @@ export class Master extends EventEmitter {
   }
 
   /**
+   * 创建广播服务代理（独立的服务实例，与addService注册的服务无关）
+   */
+  private createBroadcastServiceProxy<T>(decl: new () => T): T {
+    const declInfo = getApiDecl(decl);
+    if (!declInfo) {
+      throw new Error(`Service ${decl.name} is not decorated with @ApiDecl`);
+    }
+    
+    const serviceName = declInfo.name;
+    const methods = getApiMethods(decl);
+    const events = getApiEvents(decl);
+    const proxy = {} as T;
+    
+    // 为每个方法创建代理函数（这些方法只是占位符，实际不执行）
+    methods.forEach(methodName => {
+      (proxy as any)[methodName] = async (...args: any[]) => {
+        console.warn(`Method ${methodName} called on broadcast service ${serviceName}, but this service is only for event broadcasting`);
+        return undefined;
+      };
+    });
+
+    // 为每个事件创建广播代理
+    events.forEach((eventName: string) => {
+      // 创建独立的事件发射器
+      const eventer = new Eventer();
+      
+      (proxy as any)[eventName] = {
+        on: (listener: (data: any) => void) => {
+          // 当在Master上订阅事件时，向所有连接的客户端广播
+          const unsubscribe = eventer.on((data: any) => {
+            // 向所有已连接的客户端广播事件
+            this.broadcastEvent(serviceName, eventName, data);
+          });
+          
+          // 返回取消订阅函数
+          return () => {
+            unsubscribe();
+          };
+        },
+        emit: (data: any) => {
+          // 当在Master上触发事件时，向所有连接的客户端广播
+          this.broadcastEvent(serviceName, eventName, data);
+        }
+      };
+    });
+    
+    return proxy;
+  }
+
+  /**
+   * 广播事件到所有连接的客户端
+   */
+  private broadcastEvent(serviceName: string, eventName: string, data: any): void {
+    const eventMessage: IMessage = {
+      id: generateId(),
+      type: MessageType.EVENT,
+      service: serviceName,
+      method: eventName,
+      data,
+      timestamp: Date.now(),
+    };
+    
+    // 向所有已连接的客户端广播事件
+    for (const session of this.sessions.values()) {
+      if (session.connected) {
+        session.sender(eventMessage);
+      }
+    }
+  }
+
+  /**
    * 创建会话服务代理
    */
   private createSessionServiceProxy<T>(decl: new () => T, session: IConnectSession): T {
@@ -410,6 +561,7 @@ export class Master extends EventEmitter {
     
     const serviceName = declInfo.name;
     const methods = getApiMethods(decl);
+    const events = getApiEvents(decl);
     const proxy = {} as T;
     
     // 为每个方法创建代理函数
@@ -455,6 +607,21 @@ export class Master extends EventEmitter {
           throw error;
         }
       };
+    });
+
+    // 为每个事件创建代理
+    events.forEach((eventName: string) => {
+      // 创建事件代理，允许Master监听Slave的事件
+      const eventKey = `slave_${session.id}_${serviceName}_${eventName}`;
+      
+      if (!this.slaveEventEmitters.has(eventKey)) {
+        this.slaveEventEmitters.set(eventKey, new Eventer());
+      }
+      
+      const eventer = this.slaveEventEmitters.get(eventKey)!;
+      
+      // 直接设置事件发射器，这样 service.onPageClientPos.on() 就能正常工作
+      (proxy as any)[eventName] = eventer;
     });
     
     return proxy;

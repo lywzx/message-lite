@@ -65,6 +65,26 @@ export class SimpleMix extends EventEmitter {
   }
 
   /**
+   * 检查服务是否存在
+   */
+  hasService(decl: new () => any): boolean {
+    const declInfo = getApiDecl(decl);
+    if (!declInfo) {
+      return false;
+    }
+    
+    const serviceName = declInfo.name;
+    
+    // 检查本地服务
+    if (this.serviceInstances.has(serviceName)) {
+      return true;
+    }
+    
+    // 检查远程服务
+    return this.availableServices.has(serviceName);
+  }
+
+  /**
    * 获取服务实例
    */
   getService<T>(decl: new () => T): T {
@@ -82,7 +102,9 @@ export class SimpleMix extends EventEmitter {
     
     // 检查远程服务
     if (!this.availableServices.has(serviceName)) {
-      throw new Error(`Service ${serviceName} is not available`);
+      const availableServices = Array.from(this.availableServices);
+      const localServices = Array.from(this.serviceInstances.keys());
+      throw new Error(`Service ${serviceName} is not available. Local services: ${localServices.join(', ')}. Remote services: ${availableServices.join(', ')}`);
     }
     
     // 返回缓存的代理对象
@@ -114,7 +136,7 @@ export class SimpleMix extends EventEmitter {
     
     try {
       // 开始监听消息
-      this.transport.listenMessage(this.handleMessage.bind(this));
+      this.transport.listenMessage(this.handleMessage);
       
       // 设置超时
       const timeout = setTimeout(() => {
@@ -129,7 +151,7 @@ export class SimpleMix extends EventEmitter {
       clearTimeout(timeout);
       
     } catch (error) {
-      this.transport.unListenMessage(this.handleMessage.bind(this));
+      this.transport.unListenMessage(this.handleMessage);
       this.waitConnectDefer = null;
       this.isWaiting = false;
       throw error;
@@ -234,7 +256,7 @@ export class SimpleMix extends EventEmitter {
   /**
    * 处理消息
    */
-  private handleMessage(rawMessage: any): void {
+  private handleMessage = (rawMessage: any): void => {
     try {
       const transformedMessage = this.transport.transformMessage(rawMessage);
       
@@ -265,6 +287,9 @@ export class SimpleMix extends EventEmitter {
           break;
         case MessageType.DISCONNECT:
           this.handleDisconnect(message);
+          break;
+        case MessageType.EVENT:
+          this.handleEvent(message);
           break;
         case MessageType.HEARTBEAT:
           this.handleHeartbeat(message);
@@ -445,6 +470,21 @@ export class SimpleMix extends EventEmitter {
    */
   private handleDisconnect(message: IMessage): void {
     this.disconnect();
+  }
+
+  /**
+   * 处理事件
+   */
+  private handleEvent(message: IMessage): void {
+    const { data } = message;
+    
+    // 查找对应的服务代理并触发事件
+    for (const [serviceName, serviceProxy] of this.serviceProxies.entries()) {
+      if (serviceProxy.watcher) {
+        serviceProxy.watcher.emit(data);
+        break;
+      }
+    }
   }
 
   /**

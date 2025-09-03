@@ -103,6 +103,40 @@ export interface IMessage {
 }
 
 /**
+ * RPC执行上下文
+ */
+export interface IRpcContext {
+  /**
+   * 客户端ID
+   */
+  clientId: string;
+  /**
+   * 调用方来源
+   */
+  origin: any;
+  /**
+   * 客户端元数据
+   */
+  metadata?: any;
+  /**
+   * 调用时间戳
+   */
+  timestamp: number;
+  /**
+   * 服务名称
+   */
+  service: string;
+  /**
+   * 方法名称
+   */
+  method: string;
+  /**
+   * 消息ID
+   */
+  messageId: string;
+}
+
+/**
  * 服务元数据
  */
 export interface IServiceMeta {

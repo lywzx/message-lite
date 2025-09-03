@@ -18,3 +18,5 @@ export const master = new Master({
   },
 });
 master.addService(ALL_SERVICE).start();
+
+(window as any).__master = master;

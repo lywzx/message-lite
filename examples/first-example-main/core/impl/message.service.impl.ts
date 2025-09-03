@@ -3,6 +3,7 @@ import { message as antdMessage } from 'antd';
 import { isString } from 'lodash';
 import { ApiImpl } from 'message-lite';
 import { createDefer } from 'message-lite/util';
+import { IRpcContext } from 'message-lite';
 
 export function applyPrefix(content: string, prefix?: string) {
   return `${prefix ? prefix + ': ' : ''}${content}`;
@@ -42,31 +43,48 @@ export function showAntdMessage(
 
 @ApiImpl()
 export class MessageServiceImpl extends MessageService {
-  info(content: ImessageServiceType, context?: any): Promise<void> {
+  info(content: ImessageServiceType, context?: IRpcContext): Promise<void> {
     if (context) {
-      // tslint:disable-next-line:no-console
       console.log('RPC执行上下文', context);
+      console.log(`来自客户端 ${context.clientId} 的调用`);
+      console.log(`调用时间: ${new Date(context.timestamp).toLocaleString()}`);
+      console.log(`服务: ${context.service}.${context.method}`);
     }
     return showAntdMessage(content, 'info');
   }
 
-  success(content: ImessageServiceType): Promise<void> {
+  success(content: ImessageServiceType, context?: IRpcContext): Promise<void> {
+    if (context) {
+      console.log(`成功消息来自客户端 ${context.clientId}`);
+    }
     return showAntdMessage(content, 'success');
   }
 
-  error(content: ImessageServiceType): Promise<void> {
+  error(content: ImessageServiceType, context?: IRpcContext): Promise<void> {
+    if (context) {
+      console.log(`错误消息来自客户端 ${context.clientId}`);
+    }
     return showAntdMessage(content, 'error');
   }
 
-  warning(content: ImessageServiceType): Promise<void> {
+  warning(content: ImessageServiceType, context?: IRpcContext): Promise<void> {
+    if (context) {
+      console.log(`警告消息来自客户端 ${context.clientId}`);
+    }
     return showAntdMessage(content, 'warning');
   }
 
-  warn(content: ImessageServiceType): Promise<void> {
+  warn(content: ImessageServiceType, context?: IRpcContext): Promise<void> {
+    if (context) {
+      console.log(`警告消息来自客户端 ${context.clientId}`);
+    }
     return showAntdMessage(content, 'warn');
   }
 
-  loading(content: ImessageServiceType): Promise<void> {
+  loading(content: ImessageServiceType, context?: IRpcContext): Promise<void> {
+    if (context) {
+      console.log(`加载消息来自客户端 ${context.clientId}`);
+    }
     return showAntdMessage(content, 'loading');
   }
 }

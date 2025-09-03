@@ -66,13 +66,14 @@ export function ApiDeclEvent() {
     
     constructor[API_EVENTS_SYMBOL].add(propertyKey);
     
-    // 为事件属性创建Eventer实例
+    // 为事件属性创建Eventer实例，确保在原型上创建
+    if (!target.constructor.prototype[`_${propertyKey}`]) {
+      target.constructor.prototype[`_${propertyKey}`] = new Eventer();
+    }
+    
     Object.defineProperty(target, propertyKey, {
       get: function() {
-        if (!this[`_${propertyKey}`]) {
-          this[`_${propertyKey}`] = new Eventer();
-        }
-        return this[`_${propertyKey}`];
+        return this.constructor.prototype[`_${propertyKey}`];
       },
       enumerable: true,
       configurable: true
